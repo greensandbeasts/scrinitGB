@@ -1,0 +1,231 @@
+/*
+# Scrinit — Fix profiles and re-seed all data with new user IDs
+
+The demo users were recreated through the admin API (proper auth.identities),
+but the profiles have default values and all dependent data (screenplays,
+assignments, sessions, feedback) was cascaded on delete. This migration:
+1. Updates profiles with correct metadata
+2. Re-inserts all screenplays, assignments, sessions, feedback, and requests
+   using the new user IDs.
+*/
+
+-- ──────────────────────────────────────────────────────────────────────────
+-- Step 1: Fix profiles with correct metadata
+-- ──────────────────────────────────────────────────────────────────────────
+update public.profiles set display_name = 'Elena Marsh', role = 'writer', company = 'Independent', bio = 'Screenwriter specializing in contained thrillers and character-driven drama.', avatar_color = 'amber' where email = 'writer@scrinit.demo';
+update public.profiles set display_name = 'Daniel Okonkwo', role = 'writer', company = 'Lantern House', bio = 'Writer of grounded sci-fi and intimate family sagas across film and limited series.', avatar_color = 'rose' where email = 'writer2@scrinit.demo';
+update public.profiles set display_name = 'Marcus Cole', role = 'reader', avatar_color = 'sky' where email = 'reader@scrinit.demo';
+update public.profiles set display_name = 'Reader Two', role = 'reader', avatar_color = 'sky' where email = 'reader2@scrinit.demo';
+update public.profiles set display_name = 'Reader Three', role = 'reader', avatar_color = 'sky' where email = 'reader3@scrinit.demo';
+update public.profiles set display_name = 'Reader Four', role = 'reader', avatar_color = 'sky' where email = 'reader4@scrinit.demo';
+update public.profiles set display_name = 'Reader Five', role = 'reader', avatar_color = 'sky' where email = 'reader5@scrinit.demo';
+update public.profiles set display_name = 'Reader Six', role = 'reader', avatar_color = 'sky' where email = 'reader6@scrinit.demo';
+update public.profiles set display_name = 'Sofia Reyes', role = 'industry', company = 'Northbound Pictures', bio = 'Development executive focused on elevated genre and prestige limited series.', avatar_color = 'emerald' where email = 'industry@scrinit.demo';
+update public.profiles set display_name = 'Scrinit Platform', role = 'admin', avatar_color = 'slate' where email = 'admin@scrinit.demo';
+
+-- ──────────────────────────────────────────────────────────────────────────
+-- Step 2: Re-insert screenplays (using new writer IDs)
+-- Writer: writer@scrinit.demo = 7c486f9f-afab-4d8c-ac33-ade0acfb9906
+-- Writer: writer2@scrinit.demo = 992765e4-e290-461c-b3d1-ae5fd4931333
+-- ──────────────────────────────────────────────────────────────────────────
+
+-- Screenplay 1: The Lighthouse Keepers
+insert into public.screenplays (id, writer_id, title, genre, logline, synopsis, content, page_count, status, cover_color, tags, published_at)
+values (
+  'e0000001-0000-0000-0000-000000000001',
+  '7c486f9f-afab-4d8c-ac33-ade0acfb9906',
+  'The Lighthouse Keepers', 'Thriller',
+  'A lone lighthouse keeper on a remote island begins receiving radio distress calls from a ship that vanished forty years ago.',
+  'When Nora accepts a six-month posting at a decommissioned lighthouse on Skellig Island, she expects solitude, not a haunting.',
+  $scrinit_json$[[{"t":"h","x":"INT. LIGHTHOUSE TOWER - NIGHT"},{"t":"a","x":"A narrow spiral of rusted iron stairs. Water drips somewhere in the dark. NORA VALE (34, weathered, practical) climbs with a flashlight clamped in her teeth, her breath fogging in the cold."},{"t":"a","x":"She reaches the lamp room. The great fresnel lens is dark, hasn\u2019t turned in years. Glass panels are clouded with salt."},{"t":"a","x":"Nora sets down her pack. Looks out at the black Atlantic. Nothing for twenty miles in any direction."},{"t":"a","x":"She pulls the flashlight from her teeth."},{"t":"c","x":"NORA"},{"t":"d","x":"Six months. You can do six months."},{"t":"t","x":"CUT TO:"}],[{"t":"h","x":"INT. KEEPERS QUARTERS - LATER"},{"t":"a","x":"A cramped room below the tower. A cot, a wood stove, a shortwave radio bolted to the wall. Peeling maps of the Irish coast."},{"t":"a","x":"Nora unpacks methodically. Books. A photograph of a young girl, face down. Dried food. A journal with a few pages already written."},{"t":"a","x":"She opens the journal and writes: Day 1. Boiler works. Radio is garbage but I didn\u2019t come here to talk to anyone. The supply boat comes every two weeks."},{"t":"a","x":"She pauses. Looks at the radio. Something about it \u2014 the way the dial needle twitches, just slightly, like something is trying to come through."},{"t":"a","x":"She turns it off. The needle settles."},{"t":"c","x":"NORA"},{"t":"d","x":"Nope."},{"t":"t","x":"CUT TO:"}],[{"t":"h","x":"EXT. SKELLIG ISLAND - DAY"},{"t":"a","x":"A bare tooth of rock three hundred yards long. The lighthouse stands at the northern cliff. Gulls. Wind. Nothing else."},{"t":"a","x":"Nora walks the perimeter path, checking the sea wall. She pauses at a cairn of stones \u2014 old, weathered smooth. A tin plaque, illegible."},{"t":"a","x":"She scrapes at it with her thumb. Faint letters: LOST AT SEA 1984."},{"t":"a","x":"She stares at it a long moment. The wind pulls at her coat."},{"t":"c","x":"NORA"},{"t":"p","x":"(to herself)"},{"t":"d","x":"Forty years. And they still put up a rock."},{"t":"t","x":"CUT TO:"}],[{"t":"h","x":"INT. KEEPERS QUARTERS - NIGHT"},{"t":"a","x":"Day 3. Wind howls outside. Nora reads by lantern light. She\u2019s annotated the margins heavily."},{"t":"a","x":"The radio is off. Has been for two days. Then \u2014 static. A low crackle. The dial needle twitches."},{"t":"a","x":"Nora looks up. She didn\u2019t touch it. The power switch is visibly in the OFF position."},{"t":"a","x":"The crackle builds. Through the noise, a voice \u2014 distant, breaking up, a man\u2019s voice:"},{"t":"c","x":"RADIO VOICE"},{"t":"d","x":"...anyone receiving... this is the vessel Cormorant... position unknown... taking on water... please..."}],[{"t":"a","x":"Nora is on her feet. She grabs the mic."},{"t":"c","x":"NORA"},{"t":"d","x":"Cormorant, this is Skellig Light. Say again your position. Over."},{"t":"a","x":"Silence. Then the voice again, clearer now, desperate:"},{"t":"c","x":"RADIO VOICE"},{"t":"d","x":"...we can see your light... please turn it on... we\u2019re coming in... we can see the light..."},{"t":"a","x":"Nora looks at the dead lamp above her. The tower. It hasn\u2019t lit in years."},{"t":"c","x":"NORA"},{"t":"d","x":"The light is off. It\u2019s been off for years. You can\u2019t see it."},{"t":"a","x":"Long static. Then, very quietly:"},{"t":"c","x":"RADIO VOICE"},{"t":"d","x":"...then how are we here?"},{"t":"a","x":"The radio dies. Needle flat. Silence. Nora stands in the dark, the mic still in her hand."},{"t":"t","x":"CUT TO:"}],[{"t":"h","x":"INT. KEEPERS QUARTERS - DAWN"},{"t":"a","x":"Grey light. Nora hasn\u2019t slept. The journal is open. She\u2019s written the same phrase over and over: The Cormorant. 1984."},{"t":"a","x":"She pulls out the keeper\u2019s book \u2014 a leather-bound log going back decades. She flips to 1984. The handwriting changes. A different keeper \u2014 THOMAS REED."},{"t":"c","x":"NORA"},{"t":"d","x":"October 17th. Storm. The Cormorant went on the rocks west of the skellig. Three souls aboard. I lit the lamp but the fog was too thick. They never saw it. I heard them on the radio for three days after. Then nothing."},{"t":"a","x":"She turns the page."},{"t":"c","x":"NORA"},{"t":"d","x":"October 20th. The voices stopped. Thank God. I can\u2019t light that lamp again. Every time I do, they think we\u2019re calling them in."},{"t":"a","x":"Nora closes the book slowly."},{"t":"t","x":"CUT TO:"}],[{"t":"h","x":"INT. LAMP ROOM - NIGHT"},{"t":"a","x":"Wind and rain hammer the glass. Nora stands before the fresnel lens, a hand on the manual crank."},{"t":"a","x":"She looks down at the keeper\u2019s log. Thomas Reed\u2019s last entry: I left the light off for twenty years. They still come on the radio every October. I think they\u2019ll keep coming until someone turns it on and guides them in."},{"t":"a","x":"Nora looks out at the storm. Lightning. Black waves on the rocks below."},{"t":"a","x":"The radio crackles again from downstairs:"},{"t":"c","x":"RADIO VOICE"},{"t":"d","x":"...we can see your light... we\u2019re coming in..."}],[{"t":"a","x":"Nora puts both hands on the crank. She could light it. Guide them in. End it."},{"t":"a","x":"Or she could go downstairs and tell them to stop. Let them go."},{"t":"a","x":"Her hands tremble on the crank."},{"t":"c","x":"NORA"},{"t":"p","x":"(barely audible)"},{"t":"d","x":"I\u2019m not Thomas. I\u2019m not going to leave you out there for forty years."},{"t":"a","x":"She cranks the mechanism. With a groan of old brass, the lens begins to turn."},{"t":"a","x":"She throws the power switch. The lamp ignites \u2014 a blinding white beam sweeping out over the black water, cutting through the rain."},{"t":"a","x":"Downstairs, the radio goes silent. Nora watches the beam rotate."},{"t":"a","x":"Out in the dark, for just a moment, she sees three faint lights on the water. Moving toward the shore. Then they\u2019re gone."},{"t":"c","x":"NORA"},{"t":"d","x":"Come home."},{"t":"t","x":"FADE OUT."}]]$scrinit_json$::jsonb,
+  8, 'published', 'amber',
+  array['contained', 'psychological', 'isolated setting', 'female lead'],
+  now() - interval '14 days'
+) on conflict (id) do nothing;
+
+-- Screenplay 2: Saltwater
+insert into public.screenplays (id, writer_id, title, genre, logline, synopsis, content, page_count, status, cover_color, tags, published_at)
+values (
+  'e0000002-0000-0000-0000-000000000002',
+  '7c486f9f-afab-4d8c-ac33-ade0acfb9906',
+  'Saltwater', 'Drama',
+  'An estranged daughter returns to her dying father\u2019s coastal home and discovers a lifetime of letters he wrote to her but never sent.',
+  'Maya has not spoken to her father in twelve years. When she returns to help him die, she finds a box of letters.',
+  $scrinit_json$[[{"t":"h","x":"EXT. COASTAL HOUSE - DAY"},{"t":"a","x":"A weathered cottage on a bluff above the sea. Paint peeling. A garden gone wild. A hospice van pulls away."},{"t":"a","x":"MAYA TORRES (31, guarded, city-tired) sits in her parked car, staring at the house."},{"t":"a","x":"A HOSPICE NURSE (50s, kind) exits the front door, sees Maya, approaches."},{"t":"c","x":"NURSE"},{"t":"d","x":"You must be Maya. I\u2019m Ruth. He\u2019s been asking."},{"t":"c","x":"MAYA"},{"t":"d","x":"How is he?"},{"t":"c","x":"NURSE"},{"t":"d","x":"He\u2019s tired. The morphine makes him foggy by afternoon. Mornings are better."},{"t":"a","x":"Maya nods. Still doesn\u2019t move."},{"t":"c","x":"NURSE"},{"t":"p","x":"(gently)"},{"t":"d","x":"He won\u2019t bite. He\u2019s too tired to bite."},{"t":"a","x":"Maya almost smiles. She opens the car door."},{"t":"t","x":"CUT TO:"}],[{"t":"h","x":"INT. COASTAL HOUSE - BEDROOM"},{"t":"a","x":"A small room. Medical equipment beside a single bed. The curtains are open to the sea."},{"t":"a","x":"HENRY TORRES (68, thin, yellowed) lies propped on pillows. His eyes are open but distant."},{"t":"a","x":"Maya stands in the doorway. Henry turns his head."},{"t":"c","x":"HENRY"},{"t":"p","x":"(hoarse)"},{"t":"d","x":"You came."},{"t":"c","x":"MAYA"},{"t":"d","x":"Ruth called."},{"t":"a","x":"Henry nods slowly. He looks past her, at the doorway."},{"t":"c","x":"HENRY"},{"t":"d","x":"Your mother used to stand right there. Same look on her face. Like the house owed her something."},{"t":"a","x":"Maya\u2019s jaw tightens."},{"t":"c","x":"MAYA"},{"t":"d","x":"I\u2019m not here to talk about her."},{"t":"c","x":"HENRY"},{"t":"d","x":"No. I suppose not."},{"t":"a","x":"Silence. The sea outside."},{"t":"t","x":"CUT TO:"}],[{"t":"h","x":"INT. COASTAL HOUSE - STUDY"},{"t":"a","x":"Maya goes through drawers. Bills. Medical records. She opens a closet. A cardboard box falls. Letters spill across the floor \u2014 dozens, hundreds."},{"t":"a","x":"White envelopes, all sealed, all addressed in the same careful hand: Maya Torres. None of them have postmarks. None were sent."},{"t":"a","x":"Maya kneels among them. Picks one up. Opens it."},{"t":"a","x":"INSERT \u2014 the letter."}],[{"t":"a","x":"Dear Maya, today the sea was glass. I saw a whale spout past the buoy, the first one this season. I thought you\u2019d want to know. I don\u2019t know why I keep writing these. But the days are long and the house is quiet and writing to you is the closest thing I have to talking to you."},{"t":"a","x":"Maya\u2019s hand is shaking. She picks up another."},{"t":"a","x":"Dear Maya, today the sea was rough. The fence blew down again. I fixed it. You always hated when I let things go. I\u2019m letting a lot go now. I think you\u2019d be appalled."},{"t":"a","x":"She almost laughs. Almost."},{"t":"t","x":"CUT TO:"}],[{"t":"h","x":"EXT. COASTAL BLUFF - DUSK"},{"t":"a","x":"Maya sits on the bluff with a stack of letters. The sea is amber in the last light."},{"t":"c","x":"HENRY (V.O.)"},{"t":"d","x":"Dear Maya, today the sea was flat and grey and I thought about the day I taught you to swim. You were five. You refused to get in. You stood at the edge for an hour. I didn\u2019t push you. I just waited. And then you walked in on your own, all at once, like you\u2019d decided something."},{"t":"a","x":"Maya closes her eyes."},{"t":"c","x":"HENRY (V.O.)"},{"t":"d","x":"I should have waited with you more. Instead of pushing. I\u2019m sorry."},{"t":"t","x":"CUT TO:"}],[{"t":"h","x":"INT. COASTAL HOUSE - BEDROOM - MORNING"},{"t":"a","x":"Henry is awake. Clearer today. Maya sits beside the bed with tea."},{"t":"c","x":"MAYA"},{"t":"d","x":"I found the letters."},{"t":"a","x":"Henry\u2019s face shifts. Something like relief."},{"t":"c","x":"HENRY"},{"t":"d","x":"I didn\u2019t know how to send them. I didn\u2019t know if you\u2019d read them."},{"t":"c","x":"MAYA"},{"t":"d","x":"I would have."},{"t":"c","x":"HENRY"},{"t":"d","x":"You\u2019re here now."},{"t":"a","x":"Maya takes his hand. The first touch in twelve years. His fingers are cold."},{"t":"c","x":"MAYA"},{"t":"d","x":"I\u2019m here now."},{"t":"a","x":"They sit together. Outside, the sea moves. The curtains breathe."},{"t":"t","x":"FADE OUT."}]]$scrinit_json$::jsonb,
+  6, 'published', 'sky',
+  array['family', 'grief', 'reconciliation', 'epistolary'],
+  now() - interval '7 days'
+) on conflict (id) do nothing;
+
+-- Screenplay 3: The Weight of Light
+insert into public.screenplays (id, writer_id, title, genre, logline, synopsis, content, page_count, status, cover_color, tags, published_at)
+values (
+  'e0000003-0000-0000-0000-000000000003',
+  '992765e4-e290-461c-b3d1-ae5fd4931333',
+  'The Weight of Light', 'Science Fiction',
+  'A xenolinguist on a generation ship receives a message from the colony they are traveling toward \u2014 written in a language that has not been invented yet.',
+  'The generation ship Aurora is 180 years from Earth. Dr. Adaeze Nwosu decodes a transmission that should not exist.',
+  $scrinit_json$[[{"t":"h","x":"INT. AURORA - LAB MODULE - NIGHT"},{"t":"a","x":"A cramped lab cluttered with monitors and linguistic diagrams. The ship hums. Through a narrow viewport: stars, unmoving, eternal."},{"t":"a","x":"DR. ADAEZE NWOSU (40, sharp-eyed, exhausted) sits before a waveform display. Headphones on."},{"t":"a","x":"The signal from Kepler-442b. The colony beacon \u2014 silent for sixty years \u2014 suddenly active."},{"t":"a","x":"She removes the headphones. Rubs her temples."},{"t":"c","x":"ADAEZE"},{"t":"d","x":"Helios, run structural analysis on the signal. Syntax tree, semantic density, repetition index."},{"t":"c","x":"HELIOS (O.S.)"},{"t":"d","x":"Running. The signal contains recursive grammatical structures with no analog in Earth language databases. Estimated semantic density: four times higher than Mandarin Chinese."},{"t":"a","x":"Adaeze frowns."},{"t":"c","x":"ADAEZE"},{"t":"d","x":"Four times. That\u2019s not a greeting."},{"t":"t","x":"CUT TO:"}],[{"t":"h","x":"INT. AURORA - COMMAND MODULE"},{"t":"a","x":"CAPTAIN IRINA VOLKOV (55, practical) reviews the analysis."},{"t":"c","x":"IRINA"},{"t":"d","x":"So the colony is alive. That\u2019s good news."},{"t":"c","x":"ADAEZE"},{"t":"d","x":"They\u2019re not saying hello. They\u2019re describing a geological event. A tectonic collapse. Cities sinking."},{"t":"c","x":"IRINA"},{"t":"d","x":"That happened? On the colony?"},{"t":"c","x":"ADAEZE"},{"t":"d","x":"That\u2019s the problem. The colony wasn\u2019t founded. Nobody\u2019s down there yet."},{"t":"a","x":"Irina stares at her."},{"t":"c","x":"IRINA"},{"t":"d","x":"Then who\u2019s sending the message?"},{"t":"t","x":"CUT TO:"}],[{"t":"h","x":"INT. AURORA - LAB MODULE - LATER"},{"t":"a","x":"Adaeze works through the night. The signal contains temporal markers \u2014 past, present, and future used simultaneously."},{"t":"c","x":"ADAEZE"},{"t":"d","x":"The ground will have remembered what we built. We are writing from the foundation that is falling. You will arrive and we will have already warned you. Do not build on the southern shelf."}],[{"t":"a","x":"She picks up her comm."},{"t":"c","x":"ADAEZE"},{"t":"d","x":"Irina. The message isn\u2019t a greeting. It\u2019s a warning. From people who are there. Who will be there."},{"t":"c","x":"IRINA (V.O.)"},{"t":"d","x":"People who will be there? Adaeze, that\u2019s not how time works."},{"t":"a","x":"Adaeze looks at the viewport. The stars haven\u2019t moved. Sixty years to go."},{"t":"c","x":"ADAEZE"},{"t":"d","x":"Maybe it isn\u2019t. But if there\u2019s a chance this is real, we have sixty years to listen."},{"t":"a","x":"She puts her headphones back on. The signal plays. Layered. Patient."},{"t":"t","x":"FADE OUT."}]]$scrinit_json$::jsonb,
+  4, 'published', 'emerald',
+  array['generation ship', 'linguistics', 'time', 'first contact'],
+  now() - interval '21 days'
+) on conflict (id) do nothing;
+
+-- Screenplay 4: After the Fire
+insert into public.screenplays (id, writer_id, title, genre, logline, synopsis, content, page_count, status, cover_color, tags, published_at)
+values (
+  'e0000004-0000-0000-0000-000000000004',
+  '992765e4-e290-461c-b3d1-ae5fd4931333',
+  'After the Fire', 'Drama',
+  'Three siblings return to their childhood home after a wildfire and must decide what to save from a father\u2019s legacy they each remember differently.',
+  'The Aldridge siblings sort through ash and memory over three days.',
+  $scrinit_json$[[{"t":"h","x":"EXT. ALDRIDGE HOUSE - DAY"},{"t":"a","x":"A farmhouse at the edge of a burned forest. The trees are black sticks. The house survived \u2014 barely. The yard is covered in ash."},{"t":"a","x":"A truck pulls up. CALEB ALDRIDGE (38, steady, resentful) gets out."},{"t":"a","x":"A second car. JUNE ALDRIDGE (34, restless) steps out, coughing."},{"t":"a","x":"A motorcycle. SAM ALDRIDGE (29, angry) kills the engine."},{"t":"a","x":"The three siblings stand in the ash, looking at the house. None of them move toward it."},{"t":"c","x":"CALEB"},{"t":"d","x":"Structural\u2019s okay. I checked with the county."},{"t":"c","x":"JUNE"},{"t":"d","x":"The shop\u2019s gone."},{"t":"a","x":"Where a woodshop stood: a black foundation, twisted metal."},{"t":"c","x":"SAM"},{"t":"d","x":"Good."},{"t":"t","x":"CUT TO:"}],[{"t":"h","x":"INT. ALDRIDGE HOUSE - DAY"},{"t":"a","x":"Inside, smoke damage. Everything is grey."},{"t":"c","x":"JUNE"},{"t":"d","x":"We need to sort the salvageable stuff. Insurance wants an inventory by Friday."},{"t":"c","x":"CALEB"},{"t":"d","x":"I\u2019ll handle the inventory. You two can go back to your lives."},{"t":"c","x":"SAM"},{"t":"d","x":"Generous."},{"t":"c","x":"CALEB"},{"t":"d","x":"I\u2019ve been handling things for five years, Sam. Where were you?"},{"t":"c","x":"SAM"},{"t":"d","x":"Don\u2019t."},{"t":"a","x":"June steps between them. The same gesture their mother used to make."},{"t":"c","x":"JUNE"},{"t":"d","x":"Three days. We sort the house in three days and we go."},{"t":"t","x":"CUT TO:"}],[{"t":"h","x":"EXT. WOODSHOP FOUNDATION - DUSK"},{"t":"a","x":"Sam kicks through debris. Finds something. Pulls it from the ash."},{"t":"a","x":"A table leg, carved with vines and leaves, intricate. The work of someone who cared."},{"t":"a","x":"His face changes. The anger cracks."},{"t":"c","x":"JUNE"},{"t":"d","x":"He was still making things."},{"t":"c","x":"SAM"},{"t":"p","x":"(quietly)"},{"t":"d","x":"I thought he\u2019d stopped. He told me he\u2019d stopped."},{"t":"c","x":"JUNE"},{"t":"d","x":"He told all of us different things. That was his gift."},{"t":"t","x":"CUT TO:"}],[{"t":"h","x":"INT. ALDRIDGE HOUSE - NIGHT"},{"t":"a","x":"The three siblings sit in the kitchen. Between them: whiskey, three glasses, and the carved table leg."},{"t":"c","x":"CALEB"},{"t":"d","x":"He called me the week before. I didn\u2019t pick up."},{"t":"c","x":"JUNE"},{"t":"d","x":"What did he want?"},{"t":"c","x":"CALEB"},{"t":"d","x":"To tell me about the table. He wanted me to see it before he couldn\u2019t make things anymore."},{"t":"a","x":"Sam looks at the table leg."},{"t":"c","x":"SAM"},{"t":"d","x":"We should finish it."},{"t":"a","x":"Caleb and June stare at him."},{"t":"c","x":"SAM"},{"t":"d","x":"The table. We have three days. We should finish it."},{"t":"a","x":"A long silence. Outside, ash falls like snow."},{"t":"c","x":"JUNE"},{"t":"d","x":"Okay."},{"t":"c","x":"CALEB"},{"t":"d","x":"Okay."},{"t":"t","x":"FADE OUT."}]]$scrinit_json$::jsonb,
+  5, 'published', 'rose',
+  array['family', 'grief', 'wildfire', 'siblings', 'memory'],
+  now() - interval '10 days'
+) on conflict (id) do nothing;
+
+-- Screenplay 5: Draft — The Hollow Hour
+insert into public.screenplays (id, writer_id, title, genre, logline, synopsis, content, page_count, status, cover_color, tags)
+values (
+  'e0000005-0000-0000-0000-000000000005',
+  '7c486f9f-afab-4d8c-ac33-ade0acfb9906',
+  'The Hollow Hour', 'Horror',
+  'A night-shift radio host discovers that every caller during the 3AM hour is describing the same nightmare.',
+  'Vee Delacroix hosts the graveyard shift. The 3AM callers share eerily similar dreams.',
+  $scrinit_json$[[{"t":"h","x":"INT. RADIO STATION - NIGHT"},{"t":"a","x":"A small studio. Foam walls. A single microphone. VEE DELACROIX (29, insomnia-eyed) leans into the mic."},{"t":"c","x":"VEE"},{"t":"d","x":"You\u2019re listening to Night Watch on KQRT. I\u2019m Vee. What\u2019s keeping you up?"},{"t":"a","x":"The board lights up. She takes a call."},{"t":"c","x":"CALLER 1 (V.O.)"},{"t":"d","x":"I keep having the same dream. There\u2019s a door in a field. Just a door. No building. And I know I have to open it but my hand won\u2019t move."},{"t":"t","x":"CUT TO:"}]]$scrinit_json$::jsonb,
+  1, 'draft', 'slate',
+  array['horror', 'radio', 'dreams', 'small town']
+) on conflict (id) do nothing;
+
+-- ──────────────────────────────────────────────────────────────────────────
+-- Step 3: Re-insert assignments, sessions, feedback, requests
+-- Reader IDs:
+-- reader@scrinit.demo  = ec76b55b-08be-46a8-a323-edc1f0990f7a
+-- reader2@scrinit.demo = 71e646ad-e06f-4aa5-a9e5-19d236523633
+-- reader3@scrinit.demo = 094fc2db-659b-493b-96f5-fc8249b06549
+-- reader4@scrinit.demo = 0086fa7c-3d73-4a32-907d-f8991f0af319
+-- reader5@scrinit.demo = 8177913d-48d7-4087-8490-6f203335b79d
+-- reader6@scrinit.demo = 7fbafb17-0398-4313-923e-193ca49f6c2b
+-- ──────────────────────────────────────────────────────────────────────────
+
+-- Assignments: Lighthouse Keepers (5 readers)
+insert into public.assignments (id, screenplay_id, reader_id, status, reader_number, assigned_at, started_at, completed_at) values
+('a1000001-0000-0000-0000-000000000001', 'e0000001-0000-0000-0000-000000000001', 'ec76b55b-08be-46a8-a323-edc1f0990f7a', 'completed', 1, now() - interval '12 days', now() - interval '12 days', now() - interval '11 days'),
+('a1000001-0000-0000-0000-000000000002', 'e0000001-0000-0000-0000-000000000001', '71e646ad-e06f-4aa5-a9e5-19d236523633', 'completed', 2, now() - interval '11 days', now() - interval '11 days', now() - interval '10 days'),
+('a1000001-0000-0000-0000-000000000003', 'e0000001-0000-0000-0000-000000000001', '094fc2db-659b-493b-96f5-fc8249b06549', 'completed', 3, now() - interval '10 days', now() - interval '10 days', now() - interval '9 days'),
+('a1000001-0000-0000-0000-000000000004', 'e0000001-0000-0000-0000-000000000001', '0086fa7c-3d73-4a32-907d-f8991f0af319', 'completed', 4, now() - interval '9 days', now() - interval '9 days', now() - interval '8 days'),
+('a1000001-0000-0000-0000-000000000005', 'e0000001-0000-0000-0000-000000000001', '8177913d-48d7-4087-8490-6f203335b79d', 'abandoned', 5, now() - interval '8 days', now() - interval '8 days', now() - interval '8 days')
+on conflict do nothing;
+
+-- Assignments: Saltwater (4 readers)
+insert into public.assignments (id, screenplay_id, reader_id, status, reader_number, assigned_at, started_at, completed_at) values
+('a1000002-0000-0000-0000-000000000001', 'e0000002-0000-0000-0000-000000000002', 'ec76b55b-08be-46a8-a323-edc1f0990f7a', 'completed', 1, now() - interval '6 days', now() - interval '6 days', now() - interval '5 days'),
+('a1000002-0000-0000-0000-000000000002', 'e0000002-0000-0000-0000-000000000002', '71e646ad-e06f-4aa5-a9e5-19d236523633', 'completed', 2, now() - interval '5 days', now() - interval '5 days', now() - interval '4 days'),
+('a1000002-0000-0000-0000-000000000003', 'e0000002-0000-0000-0000-000000000002', '094fc2db-659b-493b-96f5-fc8249b06549', 'completed', 3, now() - interval '4 days', now() - interval '4 days', now() - interval '3 days'),
+('a1000002-0000-0000-0000-000000000004', 'e0000002-0000-0000-0000-000000000002', '0086fa7c-3d73-4a32-907d-f8991f0af319', 'abandoned', 4, now() - interval '3 days', now() - interval '3 days', now() - interval '3 days')
+on conflict do nothing;
+
+-- Assignments: The Weight of Light (3 readers)
+insert into public.assignments (id, screenplay_id, reader_id, status, reader_number, assigned_at, started_at, completed_at) values
+('a1000003-0000-0000-0000-000000000001', 'e0000003-0000-0000-0000-000000000003', 'ec76b55b-08be-46a8-a323-edc1f0990f7a', 'completed', 1, now() - interval '19 days', now() - interval '19 days', now() - interval '18 days'),
+('a1000003-0000-0000-0000-000000000002', 'e0000003-0000-0000-0000-000000000003', '71e646ad-e06f-4aa5-a9e5-19d236523633', 'completed', 2, now() - interval '18 days', now() - interval '18 days', now() - interval '17 days'),
+('a1000003-0000-0000-0000-000000000003', 'e0000003-0000-0000-0000-000000000003', '094fc2db-659b-493b-96f5-fc8249b06549', 'abandoned', 3, now() - interval '17 days', now() - interval '17 days', now() - interval '17 days')
+on conflict do nothing;
+
+-- Assignments: After the Fire (4 readers)
+insert into public.assignments (id, screenplay_id, reader_id, status, reader_number, assigned_at, started_at, completed_at) values
+('a1000004-0000-0000-0000-000000000001', 'e0000004-0000-0000-0000-000000000004', '71e646ad-e06f-4aa5-a9e5-19d236523633', 'completed', 1, now() - interval '9 days', now() - interval '9 days', now() - interval '8 days'),
+('a1000004-0000-0000-0000-000000000002', 'e0000004-0000-0000-0000-000000000004', '094fc2db-659b-493b-96f5-fc8249b06549', 'completed', 2, now() - interval '8 days', now() - interval '8 days', now() - interval '7 days'),
+('a1000004-0000-0000-0000-000000000003', 'e0000004-0000-0000-0000-000000000004', '0086fa7c-3d73-4a32-907d-f8991f0af319', 'completed', 3, now() - interval '7 days', now() - interval '7 days', now() - interval '6 days'),
+('a1000004-0000-0000-0000-000000000004', 'e0000004-0000-0000-0000-000000000004', '8177913d-48d7-4087-8490-6f203335b79d', 'abandoned', 4, now() - interval '6 days', now() - interval '6 days', now() - interval '6 days')
+on conflict do nothing;
+
+-- ──────────────────────────────────────────────────────────────────────────
+-- Reading sessions (same data, new reader IDs)
+-- ──────────────────────────────────────────────────────────────────────────
+insert into public.reading_sessions (id, assignment_id, screenplay_id, reader_id, session_number, started_at, ended_at, last_page_reached, pages_read_this_session, duration_seconds, status, decision) values
+('c1000001-0000-0000-0000-000000000001', 'a1000001-0000-0000-0000-000000000001', 'e0000001-0000-0000-0000-000000000001', 'ec76b55b-08be-46a8-a323-edc1f0990f7a', 1, now() - interval '12 days', now() - interval '12 days' + interval '38 minutes', 8, 8, 2280, 'completed', 'continue'),
+('c1000001-0000-0000-0000-000000000002', 'a1000001-0000-0000-0000-000000000002', 'e0000001-0000-0000-0000-000000000001', '71e646ad-e06f-4aa5-a9e5-19d236523633', 1, now() - interval '11 days', now() - interval '11 days' + interval '22 minutes', 5, 5, 1320, 'completed', 'stop'),
+('c1000001-0000-0000-0000-000000000003', 'a1000001-0000-0000-0000-000000000002', 'e0000001-0000-0000-0000-000000000001', '71e646ad-e06f-4aa5-a9e5-19d236523633', 2, now() - interval '10 days', now() - interval '10 days' + interval '18 minutes', 8, 3, 1080, 'completed', 'continue'),
+('c1000001-0000-0000-0000-000000000004', 'a1000001-0000-0000-0000-000000000003', 'e0000001-0000-0000-0000-000000000001', '094fc2db-659b-493b-96f5-fc8249b06549', 1, now() - interval '10 days', now() - interval '10 days' + interval '42 minutes', 8, 8, 2520, 'completed', 'continue'),
+('c1000001-0000-0000-0000-000000000005', 'a1000001-0000-0000-0000-000000000004', 'e0000001-0000-0000-0000-000000000001', '0086fa7c-3d73-4a32-907d-f8991f0af319', 1, now() - interval '9 days', now() - interval '9 days' + interval '31 minutes', 8, 8, 1860, 'completed', 'continue')
+on conflict (id) do nothing;
+
+insert into public.reading_sessions (id, assignment_id, screenplay_id, reader_id, session_number, started_at, ended_at, last_page_reached, pages_read_this_session, duration_seconds, status, decision, checkpoint_page) values
+('c1000001-0000-0000-0000-000000000006', 'a1000001-0000-0000-0000-000000000005', 'e0000001-0000-0000-0000-000000000001', '8177913d-48d7-4087-8490-6f203335b79d', 1, now() - interval '8 days', now() - interval '8 days' + interval '12 minutes', 4, 4, 720, 'abandoned', 'stop', 4)
+on conflict (id) do nothing;
+
+insert into public.reading_sessions (id, assignment_id, screenplay_id, reader_id, session_number, started_at, ended_at, last_page_reached, pages_read_this_session, duration_seconds, status, decision) values
+('c1000002-0000-0000-0000-000000000001', 'a1000002-0000-0000-0000-000000000001', 'e0000002-0000-0000-0000-000000000002', 'ec76b55b-08be-46a8-a323-edc1f0990f7a', 1, now() - interval '6 days', now() - interval '6 days' + interval '28 minutes', 6, 6, 1680, 'completed', 'continue'),
+('c1000002-0000-0000-0000-000000000002', 'a1000002-0000-0000-0000-000000000002', 'e0000002-0000-0000-0000-000000000002', '71e646ad-e06f-4aa5-a9e5-19d236523633', 1, now() - interval '5 days', now() - interval '5 days' + interval '15 minutes', 3, 3, 900, 'completed', 'stop'),
+('c1000002-0000-0000-0000-000000000003', 'a1000002-0000-0000-0000-000000000002', 'e0000002-0000-0000-0000-000000000002', '71e646ad-e06f-4aa5-a9e5-19d236523633', 2, now() - interval '4 days', now() - interval '4 days' + interval '16 minutes', 6, 3, 960, 'completed', 'continue'),
+('c1000002-0000-0000-0000-000000000004', 'a1000002-0000-0000-0000-000000000003', 'e0000002-0000-0000-0000-000000000002', '094fc2db-659b-493b-96f5-fc8249b06549', 1, now() - interval '4 days', now() - interval '4 days' + interval '24 minutes', 6, 6, 1440, 'completed', 'continue')
+on conflict (id) do nothing;
+
+insert into public.reading_sessions (id, assignment_id, screenplay_id, reader_id, session_number, started_at, ended_at, last_page_reached, pages_read_this_session, duration_seconds, status, decision, checkpoint_page) values
+('c1000002-0000-0000-0000-000000000005', 'a1000002-0000-0000-0000-000000000004', 'e0000002-0000-0000-0000-000000000002', '0086fa7c-3d73-4a32-907d-f8991f0af319', 1, now() - interval '3 days', now() - interval '3 days' + interval '14 minutes', 4, 4, 840, 'abandoned', 'stop', 4)
+on conflict (id) do nothing;
+
+insert into public.reading_sessions (id, assignment_id, screenplay_id, reader_id, session_number, started_at, ended_at, last_page_reached, pages_read_this_session, duration_seconds, status, decision) values
+('c1000003-0000-0000-0000-000000000001', 'a1000003-0000-0000-0000-000000000001', 'e0000003-0000-0000-0000-000000000003', 'ec76b55b-08be-46a8-a323-edc1f0990f7a', 1, now() - interval '19 days', now() - interval '19 days' + interval '19 minutes', 4, 4, 1140, 'completed', 'continue'),
+('c1000003-0000-0000-0000-000000000002', 'a1000003-0000-0000-0000-000000000002', 'e0000003-0000-0000-0000-000000000003', '71e646ad-e06f-4aa5-a9e5-19d236523633', 1, now() - interval '18 days', now() - interval '18 days' + interval '22 minutes', 4, 4, 1320, 'completed', 'continue')
+on conflict (id) do nothing;
+
+insert into public.reading_sessions (id, assignment_id, screenplay_id, reader_id, session_number, started_at, ended_at, last_page_reached, pages_read_this_session, duration_seconds, status, decision, checkpoint_page) values
+('c1000003-0000-0000-0000-000000000003', 'a1000003-0000-0000-0000-000000000003', 'e0000003-0000-0000-0000-000000000003', '094fc2db-659b-493b-96f5-fc8249b06549', 1, now() - interval '17 days', now() - interval '17 days' + interval '8 minutes', 2, 2, 480, 'abandoned', 'stop', 2)
+on conflict (id) do nothing;
+
+insert into public.reading_sessions (id, assignment_id, screenplay_id, reader_id, session_number, started_at, ended_at, last_page_reached, pages_read_this_session, duration_seconds, status, decision) values
+('c1000004-0000-0000-0000-000000000001', 'a1000004-0000-0000-0000-000000000001', 'e0000004-0000-0000-0000-000000000004', '71e646ad-e06f-4aa5-a9e5-19d236523633', 1, now() - interval '9 days', now() - interval '9 days' + interval '26 minutes', 5, 5, 1560, 'completed', 'continue'),
+('c1000004-0000-0000-0000-000000000002', 'a1000004-0000-0000-0000-000000000002', 'e0000004-0000-0000-0000-000000000004', '094fc2db-659b-493b-96f5-fc8249b06549', 1, now() - interval '8 days', now() - interval '8 days' + interval '21 minutes', 5, 5, 1260, 'completed', 'continue'),
+('c1000004-0000-0000-0000-000000000003', 'a1000004-0000-0000-0000-000000000003', 'e0000004-0000-0000-0000-000000000004', '0086fa7c-3d73-4a32-907d-f8991f0af319', 1, now() - interval '7 days', now() - interval '7 days' + interval '11 minutes', 3, 3, 660, 'completed', 'stop'),
+('c1000004-0000-0000-0000-000000000004', 'a1000004-0000-0000-0000-000000000003', 'e0000004-0000-0000-0000-000000000004', '0086fa7c-3d73-4a32-907d-f8991f0af319', 2, now() - interval '6 days', now() - interval '6 days' + interval '12 minutes', 5, 2, 720, 'completed', 'continue')
+on conflict (id) do nothing;
+
+insert into public.reading_sessions (id, assignment_id, screenplay_id, reader_id, session_number, started_at, ended_at, last_page_reached, pages_read_this_session, duration_seconds, status, decision, checkpoint_page) values
+('c1000004-0000-0000-0000-000000000005', 'a1000004-0000-0000-0000-000000000004', 'e0000004-0000-0000-0000-000000000004', '8177913d-48d7-4087-8490-6f203335b79d', 1, now() - interval '6 days', now() - interval '6 days' + interval '9 minutes', 3, 3, 540, 'abandoned', 'stop', 3)
+on conflict (id) do nothing;
+
+-- ──────────────────────────────────────────────────────────────────────────
+-- Reader feedback
+-- ──────────────────────────────────────────────────────────────────────────
+insert into public.reader_feedback (assignment_id, screenplay_id, reader_id, would_recommend, overall_rating, story_rating, characters_rating, pacing_rating, dialogue_rating, written_feedback, completion_status) values
+('a1000001-0000-0000-0000-000000000001', 'e0000001-0000-0000-0000-000000000001', 'ec76b55b-08be-46a8-a323-edc1f0990f7a', true, 9, 9, 8, 8, 9, 'Genuinely unsettling. The radio scenes gave me chills. The ending is ambiguous in the best way.', 'completed'),
+('a1000001-0000-0000-0000-000000000002', 'e0000001-0000-0000-0000-000000000001', '71e646ad-e06f-4aa5-a9e5-19d236523633', true, 8, 8, 8, 7, 8, 'Tense and atmospheric. The isolation feels real. The ending pays off beautifully.', 'completed'),
+('a1000001-0000-0000-0000-000000000003', 'e0000001-0000-0000-0000-000000000001', '094fc2db-659b-493b-96f5-fc8249b06549', true, 9, 9, 9, 8, 8, 'This is why I read scripts. The concept is simple but the execution is sharp.', 'completed'),
+('a1000001-0000-0000-0000-000000000004', 'e0000001-0000-0000-0000-000000000001', '0086fa7c-3d73-4a32-907d-f8991f0af319', true, 8, 8, 7, 8, 9, 'The dialogue crackles. A contained thriller that actually delivers on its premise.', 'completed')
+on conflict (assignment_id) do nothing;
+
+insert into public.reader_feedback (assignment_id, screenplay_id, reader_id, would_recommend, overall_rating, story_rating, characters_rating, pacing_rating, dialogue_rating, written_feedback, completion_status) values
+('a1000002-0000-0000-0000-000000000001', 'e0000002-0000-0000-0000-000000000002', 'ec76b55b-08be-46a8-a323-edc1f0990f7a', true, 8, 8, 9, 7, 8, 'Emotionally devastating in a quiet way. The swimming memory broke me a little.', 'completed'),
+('a1000002-0000-0000-0000-000000000002', 'e0000002-0000-0000-0000-000000000002', '71e646ad-e06f-4aa5-a9e5-19d236523633', false, 6, 7, 8, 5, 7, 'Beautifully written but slow. The first two pages are setup with no tension.', 'completed'),
+('a1000002-0000-0000-0000-000000000003', 'e0000002-0000-0000-0000-000000000002', '094fc2db-659b-493b-96f5-fc8249b06549', true, 8, 7, 9, 7, 8, 'A small story told with enormous care. The ending is perfect.', 'completed')
+on conflict (assignment_id) do nothing;
+
+insert into public.reader_feedback (assignment_id, screenplay_id, reader_id, would_recommend, overall_rating, story_rating, characters_rating, pacing_rating, dialogue_rating, written_feedback, completion_status) values
+('a1000003-0000-0000-0000-000000000001', 'e0000003-0000-0000-0000-000000000003', 'ec76b55b-08be-46a8-a323-edc1f0990f7a', true, 9, 9, 8, 8, 9, 'Ambitious and intelligent. The linguistic puzzle is genuinely fascinating.', 'completed'),
+('a1000003-0000-0000-0000-000000000002', 'e0000003-0000-0000-0000-000000000003', '71e646ad-e06f-4aa5-a9e5-19d236523633', true, 8, 9, 7, 7, 8, 'The concept alone is worth the read. The ending is haunting.', 'completed')
+on conflict (assignment_id) do nothing;
+
+insert into public.reader_feedback (assignment_id, screenplay_id, reader_id, would_recommend, overall_rating, story_rating, characters_rating, pacing_rating, dialogue_rating, written_feedback, completion_status) values
+('a1000004-0000-0000-0000-000000000001', 'e0000004-0000-0000-0000-000000000004', '71e646ad-e06f-4aa5-a9e5-19d236523633', true, 8, 8, 9, 7, 8, 'The sibling dynamic is the heart of this. The table leg as a symbol is elegant.', 'completed'),
+('a1000004-0000-0000-0000-000000000002', 'e0000004-0000-0000-0000-000000000004', '094fc2db-659b-493b-96f5-fc8249b06549', true, 9, 8, 9, 8, 9, 'This wrecked me. The scene where Sam finds the carved table leg is the emotional core.', 'completed'),
+('a1000004-0000-0000-0000-000000000003', 'e0000004-0000-0000-0000-000000000004', '0086fa7c-3d73-4a32-907d-f8991f0af319', true, 8, 8, 8, 8, 8, 'Grounded and deeply human. The ending is quietly powerful.', 'completed')
+on conflict (assignment_id) do nothing;
+
+-- ──────────────────────────────────────────────────────────────────────────
+-- Industry request
+-- Industry: industry@scrinit.demo = 53065670-55c8-4663-95e9-50c3edacce47
+-- Writer:   writer@scrinit.demo   = 7c486f9f-afab-4d8c-ac33-ade0acfb9906
+-- ──────────────────────────────────────────────────────────────────────────
+insert into public.industry_requests (id, screenplay_id, industry_user_id, writer_id, status, message, company_snapshot, created_at) values
+('d1000001-0000-0000-0000-000000000001',
+ 'e0000001-0000-0000-0000-000000000001',
+ '53065670-55c8-4663-95e9-50c3edacce47',
+ '7c486f9f-afab-4d8c-ac33-ade0acfb9906',
+ 'pending',
+ 'The engagement data on this is remarkable. I would love to read the full script and discuss representation.',
+ 'Northbound Pictures',
+ now() - interval '2 days')
+on conflict do nothing;

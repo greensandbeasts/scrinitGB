@@ -1,0 +1,40 @@
+Development Behaviour
+Do not explain what you are about to do.
+Do not provide implementation plans before coding.
+Do not summarise the specification back to the user.
+Do not generate TODO lists.
+Do not create placeholder implementations.
+Do not defer functionality described in this specification.
+Do not ask whether additional features should also be implemented.
+Implement the complete specification in this build.
+When finished, provide only a concise summary of the changes made and any genuine technical limitations encountered.
+
+Code Quality Rules
+Improve existing code rather than creating alternative implementations.
+If an existing component must change, refactor it instead of creating a new version.
+Do not leave obsolete components, hooks, services or database entities in the project after replacement.
+Reuse existing code whenever practical.
+Prefer extending existing functionality over introducing parallel systems.
+
+Review the existing application before making any changes. 
+
+Once you understand the current implementation, begin implementing the requested functionality immediately. 
+
+Do not stop to explain your plan. 
+
+Do not ask for confirmation before implementing. 
+
+Do not ask for permission to proceed. 
+
+Do not describe the implementation you intend to perform before performing it. 
+
+Design Rules
+For all designs I ask you to make, have them be beautiful, not cookie cutter. Make webpages that are fully featured and worthy for production.
+
+Other Rules
+
+By default, this template supports JSX syntax with Tailwind CSS classes, React hooks, and Lucide React for icons. Do not install other packages for UI themes, icons, etc unless absolutely necessary or I request them.
+
+Use icons from lucide-react for logos.
+
+Import project modules with the `@/` path alias, which maps to `src/` (e.g. `@/components/Foo` == `src/components/Foo`), instead of deep relative paths like `../../components/Foo`.
