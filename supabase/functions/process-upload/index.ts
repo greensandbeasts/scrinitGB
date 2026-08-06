@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.39.7";
+import * as pdfjs from "npm:pdfjs-dist@4.0.379/legacy/build/pdf.mjs";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,6 +32,61 @@ interface ProcessResult {
     notes: string[];
   };
   error?: string;
+}
+
+interface PdfInfo {
+  pageCount: number;
+  extractedText: string;
+  title: string | null;
+  encrypted: boolean;
+}
+
+async function parsePdf(bytes: Uint8Array): Promise<PdfInfo> {
+  const data = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  const loadingTask = pdfjs.getDocument({
+    data,
+    isEvalSupported: false,
+    useSystemFonts: true,
+  });
+
+  const pdfDoc = await loadingTask.promise;
+  const pageCount = pdfDoc.numPages;
+
+  let extractedText = "";
+  const maxPagesToExtract = Math.min(pageCount, 30);
+  for (let i = 1; i <= maxPagesToExtract; i++) {
+    const page = await pdfDoc.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items
+      .map((item: { str?: string }) => item.str ?? "")
+      .join(" ");
+    extractedText += pageText + "\n";
+  }
+  extractedText = extractedText.slice(0, 20000);
+
+  let title: string | null = null;
+  try {
+    const meta = await pdfDoc.getMetadata();
+    const info = meta.info as Record<string, unknown> | undefined;
+    const rawTitle = info?.Title as string | undefined;
+    if (rawTitle && rawTitle.trim()) {
+      title = rawTitle.trim();
+    }
+  } catch {
+    // Metadata is best-effort
+  }
+
+  if (!title && extractedText.length > 0) {
+    const firstChunks = extractedText.split("\n").filter((l) => l.trim().length > 3).slice(0, 5).join(" ");
+    const titleMatch = firstChunks.match(/^([A-Z][A-Za-z0-9\s:'\-–—!?]{3,80})/);
+    if (titleMatch) {
+      title = titleMatch[1].trim();
+    }
+  }
+
+  await pdfDoc.destroy();
+
+  return { pageCount, extractedText, title, encrypted: false };
 }
 
 Deno.serve(async (req: Request) => {
@@ -110,45 +166,33 @@ Deno.serve(async (req: Request) => {
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
 
-    // Basic PDF validation: check PDF magic bytes
-    const pdfHeader = String.fromCharCode(...bytes.slice(0, 5));
-    if (pdfHeader !== "%PDF-") {
-      return new Response(JSON.stringify({
-        success: false,
-        error: "This file is not a valid PDF. The file header does not match the PDF specification.",
-      } as ProcessResult), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Check for encryption (password protection)
-    const fullText = new TextDecoder().decode(bytes.slice(0, Math.min(bytes.length, 50000)));
-    if (fullText.includes("/Encrypt") || fullText.includes("/Encryption")) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: "This PDF is password-protected. Please remove the password and upload again.",
-      } as ProcessResult), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Count pages by looking for /Type /Page (not /Pages)
-    let pageCount = 0;
-    const pageRegex = /\/Type\s*\/Page[^s]/g;
-    const textForPages = new TextDecoder().decode(bytes);
-    const pageMatches = textForPages.match(pageRegex);
-    pageCount = pageMatches ? pageMatches.length : 0;
-
-    // Fallback: look for /Count
-    if (pageCount === 0) {
-      const countMatch = textForPages.match(/\/Count\s+(\d+)/);
-      if (countMatch) {
-        pageCount = parseInt(countMatch[1]);
+    // Parse and validate the PDF using pdfjs-dist
+    let pdfInfo: PdfInfo;
+    try {
+      pdfInfo = await parsePdf(bytes);
+    } catch (parseErr) {
+      const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+      if (/password|encrypt|security/i.test(msg)) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "This PDF is password-protected. Please remove the password and upload again.",
+        } as ProcessResult), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
+      return new Response(JSON.stringify({
+        success: false,
+        error: "This file is not a valid PDF. It may be corrupted or in an unsupported format.",
+      } as ProcessResult), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-    if (pageCount === 0) pageCount = 1; // Assume at least 1 page
+
+    const pageCount = pdfInfo.pageCount;
+    const extractedText = pdfInfo.extractedText;
+    const title = pdfInfo.title;
 
     // Validate page count
     if (pageCount < 1) {
@@ -169,42 +213,6 @@ Deno.serve(async (req: Request) => {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-    }
-
-    // Try to extract text content from the PDF for metadata extraction
-    let extractedText = "";
-    try {
-      // Look for text streams in the PDF
-      const streamRegex = /stream\r?\n([\s\S]*?)endstream/g;
-      let match;
-      let textChunks: string[] = [];
-      while ((match = streamRegex.exec(textForPages)) !== null && textChunks.length < 200) {
-        const stream = match[1];
-        // Try to find text in parentheses (PDF text objects)
-        const textObjRegex = /\(([^)]{2,})\)/g;
-        let textMatch;
-        while ((textMatch = textObjRegex.exec(stream)) !== null) {
-          const t = textMatch[1].trim();
-          if (t.length > 1 && !/^[\d\s.]+$/.test(t)) {
-            textChunks.push(t);
-          }
-        }
-      }
-      extractedText = textChunks.join(" ").slice(0, 10000);
-    } catch {
-      // Text extraction is best-effort
-    }
-
-    // Extract title from first few text chunks
-    let title: string | null = null;
-    if (extractedText.length > 0) {
-      // Look for "Written by" pattern or title case phrases near the start
-      const firstChunks = extractedText.split(" ").slice(0, 50).join(" ");
-      // Try to find a title-like pattern (usually first significant line)
-      const titleMatch = firstChunks.match(/^([A-Z][A-Za-z0-9\s:'\-–—!?]{3,80})/);
-      if (titleMatch) {
-        title = titleMatch[1].trim();
-      }
     }
 
     // Detect identifying information
