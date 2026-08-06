@@ -296,9 +296,10 @@ console.log("Profile:", profile);
 console.log("Insert data:", insertData);
     const { error: insertError } = await supabase.from('screenplays').insert(insertData);
 
-  if (insertError) {
+ if (insertError) {
   console.error("Insert error:", insertError);
-  setErrorMessage(JSON.stringify(insertError));
+  setPhase('error');
+  setErrorMessage(JSON.stringify(insertError, null, 2));
   return;
 }
 
