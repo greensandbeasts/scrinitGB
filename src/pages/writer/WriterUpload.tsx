@@ -292,14 +292,15 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
       target_audience: targetAudience,
       sanitisation_notes: processResult?.sanitisation.notes.join(', ') || null,
     };
-
+console.log("Profile:", profile);
+console.log("Insert data:", insertData);
     const { error: insertError } = await supabase.from('screenplays').insert(insertData);
 
-    if (insertError) {
-      setPhase('error');
-      setErrorMessage(insertError.message);
-      return;
-    }
+  if (insertError) {
+  console.error("Insert error:", insertError);
+  setErrorMessage(JSON.stringify(insertError));
+  return;
+}
 
     // Copy the file to anonymous-copies bucket (in production, the edge function would
     // create a sanitised copy; here we reference the same file path in the anonymous bucket)
