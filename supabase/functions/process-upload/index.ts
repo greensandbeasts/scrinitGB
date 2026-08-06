@@ -118,7 +118,10 @@ Deno.serve(async (req: Request) => {
       pageCount = textResult.totalPages;
       extractedText = (textResult.text || "").slice(0, 20000);
     } catch (parseErr) {
-      const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+     const msg =
+  parseErr instanceof Error
+    ? `${parseErr.name}: ${parseErr.message}\n${parseErr.stack}`
+    : String(parseErr);
       if (/password|encrypt|security/i.test(msg)) {
         return new Response(JSON.stringify({
           success: false,
@@ -130,7 +133,7 @@ Deno.serve(async (req: Request) => {
       }
       return new Response(JSON.stringify({
         success: false,
-        error: "This file is not a valid PDF.",
+        error: "This file is not a valid PDF. It may be corrupted or in an unsupported format.",
       } as ProcessResult), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
