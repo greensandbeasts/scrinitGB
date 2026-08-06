@@ -294,7 +294,13 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
     };
 console.log("Profile:", profile);
 console.log("Insert data:", insertData);
-    const { error: insertError } = await supabase.from('screenplays').insert(insertData);
+const { data, error: insertError } = await supabase
+  .from('screenplays')
+  .insert(insertData)
+  .select();
+
+console.log("Inserted row:", data);
+console.log("Insert error:", insertError);
 
  if (insertError) {
   console.error("Insert error:", insertError);
