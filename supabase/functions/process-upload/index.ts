@@ -130,7 +130,7 @@ Deno.serve(async (req: Request) => {
       }
       return new Response(JSON.stringify({
         success: false,
-        error: "This file is not a valid PDF. It may be corrupted or in an unsupported format.",
+        error: "This file is not a valid PDF.",
       } as ProcessResult), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
