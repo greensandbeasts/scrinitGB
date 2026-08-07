@@ -63,10 +63,13 @@ END;
 $$;
 
 -- ============================================================================
--- 2. BEFORE INSERT trigger on screenplays
+-- 2. AFTER INSERT trigger on screenplays
+--    Fires after the screenplay row exists so the credit_transactions
+--    foreign key (screenplay_id) is satisfied. Raising an exception in
+--    an AFTER trigger still rolls back the entire transaction.
 -- ============================================================================
 DROP TRIGGER IF EXISTS enforce_upload_credit ON public.screenplays;
 CREATE TRIGGER enforce_upload_credit
-  BEFORE INSERT ON public.screenplays
+  AFTER INSERT ON public.screenplays
   FOR EACH ROW
   EXECUTE FUNCTION public.consume_upload_credit_for_screenplay();
