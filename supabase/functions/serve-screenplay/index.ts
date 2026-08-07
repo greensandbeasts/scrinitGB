@@ -140,12 +140,24 @@ Deno.serve(async (req: Request) => {
       .from(bucket)
       .download(pdfPath);
 
-    if (downloadError || !fileData) {
-      return new Response(JSON.stringify({ error: "Failed to retrieve PDF" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+  if (downloadError || !fileData) {
+  console.error("Storage download failed:", downloadError);
+
+  return new Response(
+    JSON.stringify({
+      error: downloadError?.message ?? "Failed to retrieve PDF",
+      bucket,
+      pdfPath,
+    }),
+    {
+      status: 500,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+      },
     }
+  );
+}
 
     // Return the PDF with appropriate headers
     // No download headers - prevent downloads
