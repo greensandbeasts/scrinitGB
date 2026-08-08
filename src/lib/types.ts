@@ -10,7 +10,7 @@ export type SessionStatus = 'in_progress' | 'completed' | 'abandoned';
 export type ContinueDecision = 'continue' | 'stop';
 export type FeedbackCompletion = 'completed' | 'partially_read' | 'stopped_early';
 export type RequestStatus = 'pending' | 'approved' | 'declined' | 'withdrawn';
-export type ScreenplayVisibility = 'private' | 'readers_only' | 'industry_qualified';
+export type ScreenplayVisibility = 'private' | 'readers_only' | 'industry_qualified' | 'reader_community';
 export type IndustryAccessSetting = 'open_to_verified' | 'request_approval' | 'private';
 export type IndustryRequestType = 'reading_access' | 'introduction';
 export type ReaderMode = 'reader' | 'industry';
@@ -137,6 +137,8 @@ export interface Screenplay {
   lifecycle_status: LifecycleStatus;
   archive_date: string | null;
   archive_reason: string | null;
+  country: string | null;
+  language: string | null;
 }
 
 export interface Assignment {
@@ -188,6 +190,7 @@ export interface ReaderFeedback {
   ai_quality_score: number | null;
   ai_quality_enabled: boolean;
   stop_page: number | null;
+  stop_reason: string | null;
   algorithm_version_id: string | null;
 }
 

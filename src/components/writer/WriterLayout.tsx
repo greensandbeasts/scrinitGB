@@ -4,6 +4,7 @@ import { WriterScreenplays } from '@/pages/writer/WriterScreenplays';
 import { WriterScreenplayDetail } from '@/pages/writer/WriterScreenplayDetail';
 import { WriterRequests } from '@/pages/writer/WriterRequests';
 import { WriterUpload } from '@/pages/writer/WriterUpload';
+import { WriterMetadata } from '@/pages/writer/WriterMetadata';
 import { SettingsPage } from '@/pages/shared/SettingsPage';
 import { ProfilePage } from '@/pages/shared/ProfilePage';
 import { NotificationsPage } from '@/pages/shared/NotificationsPage';
@@ -25,6 +26,9 @@ export function WriterLayout({ route, navigate }: WriterLayoutProps) {
     content = <WriterScreenplayDetail screenplayId={id} navigate={navigate} />;
   } else if (route === '/writer/upload') {
     content = <WriterUpload navigate={navigate} />;
+  } else if (route.startsWith('/writer/metadata/')) {
+    const id = route.split('/writer/metadata/')[1];
+    content = <WriterMetadata screenplayId={id} navigate={navigate} />;
   } else if (route === '/writer/requests') {
     content = <WriterRequests navigate={navigate} />;
   } else if (route === '/writer/settings') {

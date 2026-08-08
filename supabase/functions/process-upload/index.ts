@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.39.7";
-import { extractText, getMeta } from "npm:unpdf@1.6.2";
+import { extractText } from "npm:unpdf@1.6.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,27 +10,8 @@ const corsHeaders = {
 
 interface ProcessResult {
   success: boolean;
-  pageCount: number;
-  title: string | null;
-  metadata: {
-    title: string | null;
-    logline: string | null;
-    synopsis: string | null;
-    genre: string | null;
-    secondaryGenre: string | null;
-    formatType: string | null;
-    budgetRange: string | null;
-    themes: string[];
-    primarySetting: string | null;
-    timePeriod: string | null;
-    tone: string | null;
-    targetAudience: string | null;
-    tags: string[];
-  };
-  sanitisation: {
-    hasIdentifyingInfo: boolean;
-    notes: string[];
-  };
+  screenplayId?: string;
+  pageCount?: number;
   error?: string;
 }
 
@@ -108,20 +89,13 @@ Deno.serve(async (req: Request) => {
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
 
-    // Parse PDF using unpdf (edge-runtime-compatible pdf.js wrapper)
     let pageCount = 0;
-    let extractedText = "";
-    let title: string | null = null;
 
     try {
       const textResult = await extractText(bytes, { mergePages: true });
       pageCount = textResult.totalPages;
-      extractedText = (textResult.text || "").slice(0, 20000);
     } catch (parseErr) {
-     const msg =
-  parseErr instanceof Error
-    ? `${parseErr.name}: ${parseErr.message}\n${parseErr.stack}`
-    : String(parseErr);
+      const msg = parseErr instanceof Error ? `${parseErr.name}: ${parseErr.message}` : String(parseErr);
       if (/password|encrypt|security/i.test(msg)) {
         return new Response(JSON.stringify({
           success: false,
@@ -138,26 +112,6 @@ Deno.serve(async (req: Request) => {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-    }
-
-    // Extract metadata (best-effort)
-    try {
-      const meta = await getMeta(bytes);
-      const info = meta.info as Record<string, unknown> | undefined;
-      const rawTitle = info?.Title as string | undefined;
-      if (rawTitle && rawTitle.trim()) {
-        title = rawTitle.trim();
-      }
-    } catch {
-      // Metadata is best-effort
-    }
-
-    if (!title && extractedText.length > 0) {
-      const firstChunks = extractedText.split("\n").filter((l) => l.trim().length > 3).slice(0, 5).join(" ");
-      const titleMatch = firstChunks.match(/^([A-Z][A-Za-z0-9\s:'\-–—!?]{3,80})/);
-      if (titleMatch) {
-        title = titleMatch[1].trim();
-      }
     }
 
     if (pageCount < 1) {
@@ -180,119 +134,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Detect identifying information
-    const sanitisationNotes: string[] = [];
-    const lowerText = extractedText.toLowerCase();
-
-    const patterns = [
-      { regex: /[\w.+-]+@[\w-]+\.[\w.-]+/gi, label: "email addresses" },
-      { regex: /(?:phone|tel|cell|mobile)[:\s]+[\d\s()+\-]{7,}/gi, label: "phone numbers" },
-      { regex: /(?:written by|author|writer)[:\s]+[A-Z][a-z]+\s+[A-Z][a-z]+/g, label: "writer names" },
-      { regex: /(?:agent|agency|management|represented by)[:\s]+[A-Z][\w\s&.]+/gi, label: "representation info" },
-      { regex: /(?:copyright|©|all rights reserved)[:\s\w\d.,]+/gi, label: "copyright notices" },
-      { regex: /(?:registered|wga|wgaw|wgae)[:\s#\d]+/gi, label: "registration numbers" },
-      { regex: /https?:\/\/[^\s]+/gi, label: "websites" },
-      { regex: /(?:linkedin|twitter|instagram|facebook)\.com\/[\w]+/gi, label: "social media links" },
-    ];
-
-    for (const { regex, label } of patterns) {
-      if (regex.test(extractedText)) {
-        sanitisationNotes.push(label);
-        regex.lastIndex = 0;
-      }
-    }
-
-    const hasIdentifyingInfo = sanitisationNotes.length > 0;
-
-    // Infer metadata
-    const genreKeywords: Record<string, string[]> = {
-      "Thriller": ["thriller", "suspense", "tension", "danger", "escape", "chase"],
-      "Drama": ["drama", "emotional", "family", "relationship", "struggle"],
-      "Science Fiction": ["space", "future", "alien", "robot", "dystopia", "cyber", "planet"],
-      "Horror": ["horror", "scary", "ghost", "demon", "blood", "fear", "monster"],
-      "Comedy": ["comedy", "funny", "humor", "joke", "laugh"],
-      "Action": ["action", "fight", "explosion", "mission", "combat", "weapon"],
-      "Mystery": ["mystery", "detective", "investigation", "clue", "murder"],
-      "Adventure": ["adventure", "journey", "quest", "explore", "treasure"],
-      "Fantasy": ["fantasy", "magic", "dragon", "kingdom", "wizard", "spell"],
-      "Romance": ["romance", "love", "relationship", "heart"],
-    };
-
-    let genre: string | null = null;
-    for (const [g, keywords] of Object.entries(genreKeywords)) {
-      if (keywords.some(k => lowerText.includes(k))) {
-        genre = g;
-        break;
-      }
-    }
-
-    let formatType: string | null = null;
-    if (pageCount <= 15) formatType = "Short";
-    else if (pageCount <= 45) formatType = "TV Pilot";
-    else formatType = "Feature";
-
-    let budgetRange: string | null = null;
-    if (/\b(explosion|space|war|battle|army|navy|city|destroy|crash|helicopter|plane)\b/i.test(extractedText)) {
-      budgetRange = "High ($50M+)";
-    } else if (/\b(car|house|office|restaurant|street|hotel)\b/i.test(extractedText)) {
-      budgetRange = "Medium ($5M-$50M)";
-    } else if (pageCount <= 15) {
-      budgetRange = "Low (Under $5M)";
-    } else {
-      budgetRange = "Medium ($5M-$50M)";
-    }
-
-    let tone: string | null = null;
-    const toneKeywords: Record<string, string[]> = {
-      "Dark": ["dark", "bleak", "grim", "brutal", "violent"],
-      "Light-hearted": ["fun", "light", "cheerful", "warm", "sweet"],
-      "Tense": ["tense", "suspenseful", "edge", "nervous", "anxiety"],
-      "Emotional": ["emotional", "heartfelt", "moving", "tear", "cry"],
-      "Gritty": ["gritty", "raw", "harsh", "real"],
-    };
-    for (const [t, keywords] of Object.entries(toneKeywords)) {
-      if (keywords.some(k => lowerText.includes(k))) {
-        tone = t;
-        break;
-      }
-    }
-
-    const themeKeywords: Record<string, string[]> = {
-      "Identity": ["identity", "self", "who am i", "belong"],
-      "Family": ["family", "father", "mother", "son", "daughter", "brother", "sister"],
-      "Power": ["power", "control", "authority", "rule", "king"],
-      "Survival": ["survive", "survival", "alive", "rescue", "escape"],
-      "Love": ["love", "romance", "heart", "passion"],
-      "Justice": ["justice", "revenge", "right", "wrong", "law"],
-      "Freedom": ["freedom", "free", "liberty", "escape", "independent"],
-    };
-    const themes: string[] = [];
-    for (const [theme, keywords] of Object.entries(themeKeywords)) {
-      if (keywords.some(k => lowerText.includes(k))) {
-        themes.push(theme);
-      }
-    }
-
-    let primarySetting: string | null = null;
-    const settingMatch = extractedText.match(/(?:INT|EXT)\.?\s+([A-Z][A-Z\s\-]+?)(?:\s*[-–])/);
-    if (settingMatch) {
-      primarySetting = settingMatch[1].trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-    }
-
-    let timePeriod: string | null = null;
-    const tpMatch = extractedText.match(/\b(19[0-9]{2}|18[0-9]{2}|17[0-9]{2}|16[0-9]{2}|medieval|ancient|future|present day|modern)\b/i);
-    if (tpMatch) timePeriod = tpMatch[1];
-
-    let targetAudience: string | null = null;
-    if (/\b(child|kid|teen|young|school)\b/i.test(extractedText)) {
-      targetAudience = "Young Adult";
-    } else if (/\b(family)\b/i.test(extractedText)) {
-      targetAudience = "Family";
-    } else {
-      targetAudience = "Adult";
-    }
-
-    // Upload to storage
     const { error: uploadError } = await supabase.storage
       .from("screenplays")
       .upload(path, file, { contentType: "application/pdf", upsert: true });
@@ -307,29 +148,50 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    const { data: screenplayRow, error: insertError } = await supabase
+      .from("screenplays")
+      .insert({
+        writer_id: user.id,
+        title: "Untitled",
+        genre: "Drama",
+        logline: "No logline provided.",
+        content: [],
+        page_count: pageCount,
+        status: "draft",
+        cover_color: "amber",
+        tags: [],
+        published_at: null,
+        original_pdf_path: path,
+        anonymous_pdf_path: path,
+        visibility: "private",
+        format_type: null,
+        budget_range: null,
+        themes: [],
+        primary_setting: null,
+        time_period: null,
+        tone: null,
+        target_audience: null,
+        sanitisation_notes: null,
+        country: null,
+        language: "en",
+      })
+      .select("id")
+      .single();
+
+    if (insertError || !screenplayRow) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: `Failed to create screenplay record: ${insertError?.message ?? "unknown error"}`,
+      } as ProcessResult), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const result: ProcessResult = {
       success: true,
+      screenplayId: screenplayRow.id,
       pageCount,
-      title,
-      metadata: {
-        title,
-        logline: null,
-        synopsis: null,
-        genre,
-        secondaryGenre: null,
-        formatType,
-        budgetRange,
-        themes: themes.slice(0, 5),
-        primarySetting,
-        timePeriod,
-        tone,
-        targetAudience,
-        tags: [],
-      },
-      sanitisation: {
-        hasIdentifyingInfo,
-        notes: sanitisationNotes,
-      },
     };
 
     return new Response(JSON.stringify(result), {
@@ -337,7 +199,7 @@ Deno.serve(async (req: Request) => {
     });
   } catch (err) {
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
