@@ -64,7 +64,7 @@ const CardContent = React.forwardRef<
 ))
 CardContent.displayName = "CardContent"
 
-const CardFooter ailments = React.forwardRef<
+const CardFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
