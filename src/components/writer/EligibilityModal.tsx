@@ -6,7 +6,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/Dialog";
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/Button";
 import { ContentPolicyModal } from "./ContentPolicyModal";
 
