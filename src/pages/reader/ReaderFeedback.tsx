@@ -5,8 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import { Card, Badge } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
   getCoverColor, type Assignment, type Screenplay, type FeedbackCompletion,

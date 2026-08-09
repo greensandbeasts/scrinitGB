@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, BookOpen, Users, TrendingUp, Star, Shield, Eye, Pause, Play, Trash2, AlertCircle, Check, Loader2, Building2, Mail, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { Card, StatCard } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import { Card, StatCard, Badge } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { getCoverColor, relativeTime, formatDuration, type Screenplay, type ReadingSession, type ReaderFeedback, type Assignment, type IndustryRequest, type IndustryReadingSession, type Profile } from '@/lib/types';
 import { computeRetentionCurve, computeDropOffPoints, computeEngagementSummary, computeConfidenceScore } from '@/lib/analytics';

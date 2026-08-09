@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { Award, TrendingUp, Upload, History, Gift, Zap, ChevronRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
-import { Card, StatCard } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import { Card, StatCard, Badge } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
   type ReaderContributionBalance, type ContributionEvent, type CreditTransaction,

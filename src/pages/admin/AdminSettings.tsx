@@ -3,7 +3,7 @@ import { Settings, Save, Users, BookOpen, TrendingUp, Upload, Shield, Check, Loa
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/Card';
 import type { PlatformSettings } from '@/lib/types';
 
 interface AdminSettingsProps {

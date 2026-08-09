@@ -1,7 +1,7 @@
 import { useAuth } from '@/lib/auth';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
-import { Badge } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/Card';
 import { SELECTABLE_ROLE_LABELS } from '@/lib/types';
 
 interface ProfilePageProps {

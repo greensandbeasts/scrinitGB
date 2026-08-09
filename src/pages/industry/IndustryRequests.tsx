@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, BookOpen, Clock, Check, AlertCircle, Mail } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import { Card, Badge } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { getCoverColor, relativeTime, type IndustryRequest, type ScreenplayDiscovery } from '@/lib/types';
 

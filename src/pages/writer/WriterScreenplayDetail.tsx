@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, BookOpen, Users, TrendingUp, Star, ThumbsUp, Eye, Clock, MessageSquare, ChevronRight, Building2, Mail, ShieldCheck, Film } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { Card, StatCard } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import { Card, StatCard, Badge } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { RetentionCurve } from '@/components/charts/RetentionCurve';
 import { ConfidenceGauge } from '@/components/charts/ConfidenceGauge';

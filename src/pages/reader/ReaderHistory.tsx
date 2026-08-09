@@ -3,7 +3,7 @@ import { Clock, BookOpen, CheckCircle, XCircle, BarChart3, FileText, Bell, Heart
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { getCoverColor, relativeTime, type Assignment, type Screenplay, type ReaderFeedback, type FollowerNotification } from '@/lib/types';
 
