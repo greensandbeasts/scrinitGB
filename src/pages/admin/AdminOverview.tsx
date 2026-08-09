@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Users, BookOpen, BarChart3, TrendingUp, Star, ThumbsUp, Activity, BookMarked } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { Card, StatCard, Badge } from '@/components/ui/Card';
+import { Card, StatCard } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { getCoverColor, relativeTime, type ScreenplayDiscovery, type Profile } from '@/lib/types';
 
 interface AdminOverviewProps {

@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Search, Shield, Ban, CheckCircle2, UserCog, X, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { Card, Badge } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { relativeTime, type Profile, type UserRole } from '@/lib/types';

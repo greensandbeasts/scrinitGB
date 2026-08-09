@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Plus, TrendingUp, Users, BookOpen, Star, ArrowRight, Eye, ThumbsUp, Mail, Building2, Film } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
-import { Card, StatCard, Badge } from '@/components/ui/Card';
+import { Card, StatCard } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { getCoverColor, relativeTime, type Screenplay, type ScreenplayDiscovery, type IndustryRequest } from '@/lib/types';
 

@@ -3,7 +3,8 @@ import {
   Film, Check, AlertCircle, Loader2, Archive, TrendingUp, X,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { Card, Badge } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import {
   type Screenplay, type LifecycleStatus,

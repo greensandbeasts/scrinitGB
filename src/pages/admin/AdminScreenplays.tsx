@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Search, BookOpen, Users, TrendingUp, Star } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { Card, Badge } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { getCoverColor, relativeTime, type ScreenplayDiscovery } from '@/lib/types';
 

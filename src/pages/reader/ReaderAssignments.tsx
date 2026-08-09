@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { BookOpen, ArrowRight, Clock, CheckCircle2, XCircle, Play, Square, Home } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
-import { Card, Badge } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { getCoverColor, relativeTime, type Assignment, type Screenplay, type ReadingSession } from '@/lib/types';
 

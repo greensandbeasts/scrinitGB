@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, BookOpen, Mail, Check, X, Clock, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
-import { Card, Badge } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { getCoverColor, relativeTime, type IndustryRequest, type Screenplay, type Profile } from '@/lib/types';
 
