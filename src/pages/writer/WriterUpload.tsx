@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AlertCircle, ArrowLeft, Check, ChevronDown, FileText, FileUp,
+  AlertCircle, ArrowLeft, Check, ChevronDown, Eye, FileText, FileUp,
   Gift, Info, Languages, Loader2, Lock, Upload,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
