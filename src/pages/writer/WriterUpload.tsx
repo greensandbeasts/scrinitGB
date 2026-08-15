@@ -488,8 +488,10 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-6"><span className="w-8 h-8 rounded-full bg-ink-100 dark:bg-ink-800 text-ink-700 dark:text-ink-300 flex items-center justify-center text-sm font-bold">2</span><div><h2 className="text-lg font-bold text-ink-900 dark:text-white">Visibility</h2><p className="text-sm text-ink-500 dark:text-ink-400">
             Choose who can initially discover your screenplay.
-          </p></div>
-          <div className="space-y-4">
+                    </p></div>
+        </div>
+
+        <div className="space-y-4">
             <div className={`w-full flex items-start gap-3 p-4 rounded-xl border-2 transition-all text-left ${
               form.visibility === 'private'
                 ? 'border-ink-300 dark:border-ink-600 bg-ink-50 dark:bg-ink-800'
