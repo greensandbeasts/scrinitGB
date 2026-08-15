@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { Card, Badge } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Dialog, DialogContent } from '@/components/ui/Dialog';
 import type {
   ContributionAlgorithmVersion,
   ReaderContributionBalance,
@@ -201,6 +202,8 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
 
   const [eligibility, setEligibility] = useState<'free' | 'earned' | 'none' | null>(null);
   const [creditLoading, setCreditLoading] = useState(true);
+  const [eligibilityModalOpen, setEligibilityModalOpen] = useState(false);
+  const [contentPolicyModalOpen, setContentPolicyModalOpen] = useState(false);
   const [form, setForm] = useState({
     title: '',
     format_type: '',
@@ -218,6 +221,114 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
     tags: [] as string[],
     visibility: 'private' as ScreenplayVisibility,
   });
+
+  function EligibilityModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+    return (
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="p-6">
+          <h2 className="text-xl font-bold text-ink-900 dark:text-white mb-4">Screenplay Eligibility</h2>
+          <div className="prose dark:prose-invert mb-6">
+            <p>Scrinit is designed for completed screenplays that are ready for meaningful community feedback.</p>
+            <p>Please upload your screenplay only if it:</p>
+            <ul className="list-disc list-inside mt-4 space-y-2">
+              <li>Is complete.</li>
+              <li>Is properly formatted.</li>
+              <li>Is readable from beginning to end.</li>
+              <li>Represents your current best draft.</li>
+              <li>Is ready to receive constructive feedback from other writers.</li>
+              <li>Has a first page containing only the screenplay title.</li>
+              <li>Contains no identifying information on the first page.</li>
+            </ul>
+            <h3 className="text-lg font-bold text-ink-900 dark:text-white mt-4">Title Page Requirement</h3>
+            <p>The first page of every screenplay must contain <strong className="font-semibold">only the title of the screenplay</strong>.</p>
+            <p>The title on the first page must match the title entered in the metadata.</p>
+            <p>The first page must not contain:</p>
+            <ul className="list-disc list-inside mt-4 space-y-2">
+              <li>Writer name.</li>
+              <li>Contact details.</li>
+              <li>Email address.</li>
+              <li>Phone number.</li>
+              <li>Website.</li>
+              <li>Social media handle.</li>
+              <li>Production company.</li>
+              <li>Agent or manager details.</li>
+              <li>Copyright information.</li>
+              <li>Address.</li>
+              <li>Any other identifying information.</li>
+            </ul>
+            <p>The screenplay itself may naturally contain character names, fictional contact details and other story content.</p>
+            <p>Scrinit only performs the mandatory anonymity check on the <strong className="font-semibold">first page</strong>.</p>
+            <h3 className="text-lg font-bold text-ink-900 dark:text-white mt-4">The following should not be uploaded:</h3>
+            <ul className="list-disc list-inside mt-4 space-y-2">
+              <li>Incomplete screenplays.</li>
+              <li>Scene collections.</li>
+              <li>Story notes.</li>
+              <li>Outlines.</li>
+              <li>Treatments.</li>
+              <li>Exploratory first drafts.</li>
+              <li>Produced screenplays.</li>
+              <li>Screenplays already in active professional development.</li>
+            </ul>
+            <p>If you revise your screenplay after receiving feedback, upload the new draft as a new version of the existing screenplay rather than creating a separate project.</p>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={onClose} variant="secondary">Close</Button>
+            <Button
+              onClick={() => {
+                onClose();
+                setContentPolicyModalOpen(true);
+              }}
+              className="ml-2"
+            >
+              View Content Policy
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  function ContentPolicyModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+    return (
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="p-6">
+          <h2 className="text-xl font-bold text-ink-900 dark:text-white mb-4">Scrinit Content Policy</h2>
+          <div className="prose dark:prose-invert mb-6">
+            <p>The policy should clearly explain what content is prohibited from being submitted to Scrinit.</p>
+            <p>The policy should distinguish between fictional depictions of mature or disturbing subject matter and prohibited content.</p>
+            <p>Screenplays may contain mature fictional subject matter such as:</p>
+            <ul className="list-disc list-inside mt-4 space-y-2">
+              <li>Violence.</li>
+              <li>Crime.</li>
+              <li>Murder.</li>
+              <li>Abuse.</li>
+              <li>Strong language.</li>
+              <li>Sexual themes.</li>
+              <li>Discrimination.</li>
+              <li>Racism as part of characterisation or story.</li>
+              <li>Drug use.</li>
+              <li>Horror.</li>
+              <li>Disturbing or controversial themes.</li>
+            </ul>
+            <p>However, screenplays must not contain prohibited material, including:</p>
+            <ul className="list-disc list-inside mt-4 space-y-2">
+              <li>Pornographic material whose primary purpose is sexual gratification.</li>
+              <li>Sexual content involving minors.</li>
+              <li>Sexual exploitation or sexualisation of minors.</li>
+              <li>Content that facilitates real-world criminal activity or violence.</li>
+              <li>Material primarily intended to promote hatred against protected groups.</li>
+              <li>Content promoting or recruiting for terrorist or extremist organisations.</li>
+              <li>Other material that Scrinit is legally or operationally prohibited from hosting.</li>
+            </ul>
+            <p>The policy should make clear that fictional depiction of difficult subject matter is not automatically prohibited simply because the subject matter is disturbing, offensive or mature.</p>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={onClose} variant="secondary">Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const loadCreditStatus = useCallback(async () => {
 
@@ -338,7 +449,7 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
         </div>
         <Badge color={eligibility === 'free' ? 'forest' : 'accent'}><Gift className="w-3 h-3 mr-1" />{eligibility === 'free' ? 'Free upload credit' : `${balance?.upload_credits ?? 0} available`}</Badge>
       </div>
-      <button type="button" className="text-sm text-ink-500 hover:text-ink-900 dark:hover:text-white inline-flex items-center gap-1.5 mb-7"><Info className="w-3.5 h-3.5" /> Is my screenplay eligible?</button>
+      <button type="button" className="text-sm text-ink-500 hover:text-ink-900 dark:hover:text-white inline-flex items-center gap-1.5 mb-7" onClick={() => setEligibilityModalOpen(true)}><Info className="w-3.5 h-3.5" /> Is my screenplay eligible?</button>
 
       <div className="space-y-6">
         <Card className="p-6">
@@ -362,7 +473,6 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
                 <div><label className={labelClass}>Primary Setting</label><SelectField value={form.primary_setting} onChange={(value) => setForm({ ...form, primary_setting: value })} options={SETTING_OPTIONS} placeholder="Select setting" /></div>
               </div>
               <div className="grid sm:grid-cols-2 gap-5">
-                <div><label className={labelClass}>Time Period</label><SelectField value={form.time_period} onChange={(value) => setForm({ ...form, time_period: value })} options={TIME_PERIOD_OPTIONS} placeholder="Select time period" /></div>
                 <div><label className={labelClass}>Country</label><SearchableSelect value={form.country} onChange={(value) => setForm({ ...form, country: value })} options={COUNTRY_OPTIONS} placeholder="Select country" searchPlaceholder="Search countries..." /></div>
               </div>
               <div className="grid sm:grid-cols-2 gap-5">
@@ -376,16 +486,48 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
         </Card>
 
         <Card className="p-6">
-          <div className="flex items-center gap-3 mb-6"><span className="w-8 h-8 rounded-full bg-ink-100 dark:bg-ink-800 text-ink-700 dark:text-ink-300 flex items-center justify-center text-sm font-bold">2</span><div><h2 className="text-lg font-bold text-ink-900 dark:text-white">Screenplay PDF</h2><p className="text-sm text-ink-500 dark:text-ink-400">The page count and title page will be checked automatically.</p></div></div>
-
-          <div onDragEnter={(event) => { event.preventDefault(); setDragActive(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={() => setDragActive(false)} onDrop={(event) => { event.preventDefault(); setDragActive(false); const droppedFile = event.dataTransfer.files[0]; if (droppedFile) selectFile(droppedFile); }} onClick={() => inputRef.current?.click()} className={`border-2 border-dashed rounded-2xl p-9 text-center cursor-pointer transition-colors ${dragActive ? 'border-accent-400 bg-accent-50 dark:bg-accent-900/10' : 'border-ink-200 dark:border-ink-700 hover:border-ink-300'}`}>
-            <input ref={inputRef} type="file" accept=".pdf,application/pdf" className="hidden" onChange={(event) => { const selected = event.target.files?.[0]; if (selected) selectFile(selected); event.target.value = ''; }} />
-            {file ? <><FileText className="w-9 h-9 text-forest-500 mx-auto mb-3" /><p className="font-semibold text-ink-900 dark:text-white">{file.name}</p><p className="text-sm text-ink-400 mt-1">{(file.size / 1024 / 1024).toFixed(1)}MB · Click to replace</p></> : <><FileUp className="w-9 h-9 text-ink-400 mx-auto mb-3" /><p className="font-semibold text-ink-900 dark:text-white">Upload your screenplay PDF</p><p className="text-sm text-ink-400 mt-1">Drag and drop or click to browse · PDF only · Max 25MB</p></>}
+          <div className="flex items-center gap-3 mb-6"><span className="w-8 h-8 rounded-full bg-ink-100 dark:bg-ink-800 text-ink-700 dark:text-ink-300 flex items-center justify-center text-sm font-bold">2</span><div><h2 className="text-lg font-bold text-ink-900 dark:text-white">Visibility</h2><p className="text-sm text-ink-500 dark:text-ink-400">
+            Choose who can initially discover your screenplay.
+          </p>
+          <div className="space-y-4">
+            <div className={`w-full flex items-start gap-3 p-4 rounded-xl border-2 transition-all text-left ${
+              form.visibility === 'private'
+                ? 'border-ink-300 dark:border-ink-600 bg-ink-50 dark:bg-ink-800'
+                : 'border-ink-100 dark:border-ink-800 hover:border-ink-200 dark:hover:border-ink-700'
+            }`} onClick={() => setForm({ ...form, visibility: 'private' })}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                form.visibility === 'private' ? 'bg-ink-200 dark:bg-ink-700' : 'bg-ink-100 dark:bg-ink-800'
+              }`}>
+                <Lock className="w-5 h-5 text-ink-500" />
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-semibold text-ink-900 dark:text-white">Private</div>
+                <div className="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
+                  Only visible to you. Does not appear in searches or receive community reviews.
+                </div>
+              </div>
+              {form.visibility === 'private' && <Check className="w-5 h-5 text-accent-500 flex-shrink-0" />}
+            </div>
+            <div className={`w-full flex items-start gap-3 p-4 rounded-xl border-2 transition-all text-left ${
+              form.visibility === 'reader_community'
+                ? 'border-accent-300 dark:border-accent-700 bg-accent-50 dark:bg-accent-900/10'
+                : 'border-ink-100 dark:border-ink-800'
+            }`} onClick={() => setForm({ ...form, visibility: 'reader_community' })}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                form.visibility === 'reader_community' ? 'bg-accent-100 dark:bg-accent-900/30' : 'bg-ink-100 dark:bg-ink-800'
+              }`}>
+                <Eye className="w-5 h-5 text-accent-500" />
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-semibold text-ink-900 dark:text-white">Reader Community</div>
+                <div className="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
+                  Available to approved community readers. Appears in discovery and can receive reviews.
+                </div>
+              </div>
+              {form.visibility === 'reader_community' && <Check className="w-5 h-5 text-accent-500 flex-shrink-0" />}
+            </div>
           </div>
-          {fileError && <p className="mt-3 text-sm text-coral-600 flex items-center gap-2"><AlertCircle className="w-4 h-4" />{fileError}</p>}
         </Card>
-
-        <Card className="p-6 opacity-80"><div className="flex items-center gap-3"><span className="w-8 h-8 rounded-full bg-ink-100 dark:bg-ink-800 text-ink-700 dark:text-ink-300 flex items-center justify-center text-sm font-bold">3</span><div><h2 className="text-lg font-bold text-ink-900 dark:text-white">Visibility</h2><p className="text-sm text-ink-500 dark:text-ink-400 inline-flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> Keep Private is selected by default.</p></div></div></Card>
 
         <Card className="p-6"><h2 className="text-lg font-bold text-ink-900 dark:text-white mb-2">Submission Confirmation</h2><p className="text-sm text-ink-500 dark:text-ink-400">By submitting your screenplay, you agree to Scrinit's Content Policy.</p></Card>
 
