@@ -488,7 +488,7 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-6"><span className="w-8 h-8 rounded-full bg-ink-100 dark:bg-ink-800 text-ink-700 dark:text-ink-300 flex items-center justify-center text-sm font-bold">2</span><div><h2 className="text-lg font-bold text-ink-900 dark:text-white">Visibility</h2><p className="text-sm text-ink-500 dark:text-ink-400">
             Choose who can initially discover your screenplay.
-          </p>
+          </p></div>
           <div className="space-y-4">
             <div className={`w-full flex items-start gap-3 p-4 rounded-xl border-2 transition-all text-left ${
               form.visibility === 'private'
@@ -526,7 +526,7 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
               </div>
               {form.visibility === 'reader_community' && <Check className="w-5 h-5 text-accent-500 flex-shrink-0" />}
             </div>
-          </div>  {/* This was the missing closing div */}
+          </div>
         </Card>
 
         <Card className="p-6"><h2 className="text-lg font-bold text-ink-900 dark:text-white mb-2">Submission Confirmation</h2><p className="text-sm text-ink-500 dark:text-ink-400">By submitting your screenplay, you agree to Scrinit's Content Policy.</p></Card>
