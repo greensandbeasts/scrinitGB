@@ -39,29 +39,12 @@ interface ProcessResult {
   error?: string;
 }
 
-type SubmissionPhase = 'details' | 'validating' | 'complete';
+type SubmissionPhase = 'details' | 'upload' | 'visibility' | 'submitting' | 'complete';
 
-const STAGES = ['Details', 'Validate', 'Complete'] as const;
-const VALIDATION_MESSAGES: Record<Exclude<TitlePageValidation, 'valid'>, { title: string; detail: string }> = {
-  title_mismatch: {
-    title: 'Title page does not match',
-    detail: 'The title on the first page must match the title entered above. Please check the title and upload the screenplay again.',
-  },
-  identifying_information: {
-    title: 'Title page contains identifying information',
-    detail: 'The first page must contain only the screenplay title. Remove any writer name, contact details or other identifying information and upload the screenplay again.',
-  },
-  unreadable: {
-    title: 'Title page could not be verified',
-    detail: 'Scrinit could not verify the first page of this PDF. Please upload a properly formatted, readable screenplay PDF.',
-  },
-};
-
-const fieldClass = 'w-full px-4 py-2.5 rounded-xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 text-sm text-ink-900 dark:text-white placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-ink-200 dark:focus:ring-ink-700 transition-all';
-const labelClass = 'block text-sm font-medium text-ink-700 dark:text-ink-300 mb-1.5';
+const STAGES = ['Details', 'Upload', 'Visibility'] as const;
 
 function StageIndicator({ phase }: { phase: SubmissionPhase }) {
-  const currentStage = phase === 'details' ? 0 : phase === 'validating' ? 1 : 2;
+  const currentStage = phase === 'details' ? 0 : phase === 'upload' ? 1 : 2;
   return (
     <div className="flex items-center gap-2 mb-8" aria-label={`Submission progress: ${STAGES[currentStage]}`}>
       {STAGES.map((stage, index) => (
@@ -155,7 +138,7 @@ function MultiSelect({ options, selected, onChange, placeholder }: {
         <span className={`flex-1 ${selected.length ? '' : 'text-ink-400'}`}>{selected.length ? `${selected.length} selected` : placeholder}</span>
         <ChevronDown className="w-4 h-4 text-ink-400" />
       </button>
-      {selected.length > 0 && <div className="flex flex-wrap gap-1.5 mt-2">{selected.map((option) => <button key={option} type="button" onClick={() => toggle(option)} className="px-2.5 py-1 rounded-lg bg-ink-100 dark:bg-ink-800 text-xs text-ink-700 dark:text-ink-300">{option} ×</button>)}</div>}
+      {selected.length > 0 && <div className="flex flex-wrap gap-1.5 mt-2">{selected.map((option) => <button key={option} type="button" onClick={() => toggle(option)} className="px-2.5 py-1 rounded-lg bg-ink-100 dark:bg-ink-800 text-xs text-ink-700 dark:text-ink-300">{option} ×</button>)}</div>
       {open && (
         <>
           <button type="button" aria-label="Close selection menu" className="fixed inset-0 z-40 cursor-default" onClick={() => setOpen(false)} />
@@ -182,7 +165,7 @@ function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[
         <input value={value} onChange={(event) => setValue(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addTag(); } }} className={fieldClass} placeholder="Type a tag and press Enter" />
         <Button type="button" variant="secondary" onClick={addTag} disabled={!value.trim() || tags.length >= 10}>Add</Button>
       </div>
-      {tags.length > 0 && <div className="flex flex-wrap gap-1.5 mt-2">{tags.map((tag) => <button key={tag} type="button" onClick={() => onChange(tags.filter((value) => value !== tag))} className="px-2.5 py-1 rounded-lg bg-ink-100 dark:bg-ink-800 text-xs text-ink-700 dark:text-ink-300">{tag} ×</button>)}</div>}
+      {tags.length > 0 && <div className="flex flex-wrap gap-1.5 mt-2">{tags.map((tag) => <button key={tag} type="button" onClick={() => onChange(tags.filter((value) => value !== tag))} className="px-2.5 py-1 rounded-lg bg-ink-100 dark:bg-ink-800 text-xs text-ink-700 dark:text-ink-300>{tag} ×</button>)}</div>}
       <p className="text-xs text-ink-400 mt-1.5">Add up to 10 searchable tags.</p>
     </div>
   );
@@ -331,7 +314,6 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
   }
 
   const loadCreditStatus = useCallback(async () => {
-
     if (!profile) return;
     const [eligibilityResult, balanceResult, configResult] = await Promise.all([
       supabase.rpc('check_upload_eligibility', { p_user_id: profile.id }),
@@ -363,7 +345,7 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
 
   const trimmedLoglineLength = form.logline.trim().length;
   const trimmedSynopsisLength = form.synopsis.trim().length;
-  const requiredValid = Boolean(
+  const detailsValid = Boolean(
     form.title.trim() && form.format_type && form.genre &&
     trimmedLoglineLength >= 1 && trimmedLoglineLength <= 200 &&
     trimmedSynopsisLength >= 250 && trimmedSynopsisLength <= 1500 && form.language,
@@ -371,9 +353,9 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!file || !requiredValid || phase === 'validating') return;
+    if (!file || !detailsValid || phase !== 'visibility') return;
     setSubmissionError(null);
-    setPhase('validating');
+    setPhase('submitting');
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -399,7 +381,19 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
       if (result.screenplayId) window.setTimeout(() => navigate(`/writer/screenplay/${result.screenplayId}`), 900);
     } catch (error) {
       setSubmissionError(error instanceof Error ? error.message : 'The screenplay could not be submitted.');
-      setPhase('details');
+      setPhase('visibility');
+    }
+  };
+
+  const proceedToUpload = () => {
+    if (detailsValid) {
+      setPhase('upload');
+    }
+  };
+
+  const proceedToVisibility = () => {
+    if (file) {
+      setPhase('visibility');
     }
   };
 
@@ -408,7 +402,6 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
   }
 
   if (eligibility === 'none') {
-
     const pointsPerCredit = config?.points_per_credit ?? 1000;
     const currentPoints = balance?.contribution_points ?? 0;
     return (
@@ -437,6 +430,14 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
     );
   }
 
+  if (phase === 'submitting') {
+    return (
+      <div className="flex items-center justify-center h-64 text-sm text-ink-400 animate-pulse">
+        Submitting screenplay...
+      </div>
+    );
+  }
+
   return (
     <form className="max-w-4xl mx-auto" onSubmit={handleSubmit}>
       <StageIndicator phase={phase} />
@@ -452,89 +453,152 @@ export function WriterUpload({ navigate }: WriterUploadProps) {
       <button type="button" className="text-sm text-ink-500 hover:text-ink-900 dark:hover:text-white inline-flex items-center gap-1.5 mb-7" onClick={() => setEligibilityModalOpen(true)}><Info className="w-3.5 h-3.5" /> Is my screenplay eligible?</button>
 
       <div className="space-y-6">
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-6"><span className="w-8 h-8 rounded-full bg-ink-900 dark:bg-white text-white dark:text-ink-900 flex items-center justify-center text-sm font-bold">1</span><div><h2 className="text-lg font-bold text-ink-900 dark:text-white">Screenplay Details</h2><p className="text-sm text-ink-500 dark:text-ink-400">Enter the metadata readers will use to discover your work.</p></div></div>
-          <div className="space-y-5">
-            <div><label htmlFor="title" className={labelClass}>Title <span className="text-coral-500">*</span></label><input id="title" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} className={fieldClass} placeholder="Enter your screenplay title" required /></div>
-            <div className="grid sm:grid-cols-2 gap-5">
-              <div><label className={labelClass}>Format <span className="text-coral-500">*</span></label><SelectField value={form.format_type} onChange={(value) => setForm({ ...form, format_type: value })} options={FORMAT_OPTIONS} placeholder="Select format" /></div>
-              <div><label className={labelClass}>Genre <span className="text-coral-500">*</span></label><SelectField value={form.genre} onChange={(value) => setForm({ ...form, genre: value })} options={GENRE_OPTIONS} placeholder="Select genre" /></div>
-            </div>
-            <div><div className="flex justify-between gap-3"><label htmlFor="logline" className={labelClass}>Logline <span className="text-coral-500">*</span></label><span className={`text-xs ${trimmedLoglineLength > 200 ? 'text-coral-600' : 'text-ink-400'}`}>{trimmedLoglineLength} / 200</span></div><input id="logline" value={form.logline} onChange={(event) => setForm({ ...form, logline: event.target.value })} className={fieldClass} placeholder="A one-sentence summary of your screenplay" aria-invalid={trimmedLoglineLength > 200} required /></div>
-            <div><div className="flex justify-between gap-3"><label htmlFor="synopsis" className={labelClass}>Short Synopsis <span className="text-coral-500">*</span></label><span className={`text-xs ${trimmedSynopsisLength > 1500 ? 'text-coral-600' : 'text-ink-400'}`}>{trimmedSynopsisLength} / 1,500</span></div><textarea id="synopsis" value={form.synopsis} onChange={(event) => setForm({ ...form, synopsis: event.target.value })} rows={7} className={`${fieldClass} resize-y`} placeholder="Briefly summarise the story, including the central conflict and outcome." aria-invalid={trimmedSynopsisLength > 1500 || (trimmedSynopsisLength > 0 && trimmedSynopsisLength < 250)} required /><p className="text-xs text-ink-400 mt-1.5">Briefly summarise the story, including the central conflict and outcome. Minimum 250 characters.</p></div>
-            <div><label className={labelClass}>Language <span className="text-coral-500">*</span></label><SearchableSelect value={form.language} onChange={(value) => setForm({ ...form, language: value })} options={LANGUAGE_OPTIONS} placeholder="Select language" searchPlaceholder="Search languages..." icon={Languages} /></div>
-          </div>
-
-          <div className="border-t border-ink-100 dark:border-ink-800 mt-7 pt-7">
-            <h3 className="text-xs font-semibold text-ink-400 dark:text-ink-500 uppercase tracking-wider mb-5">Optional metadata</h3>
+        {phase === 'details' && (
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-6"><span className="w-8 h-8 rounded-full bg-ink-900 dark:bg-white text-white dark:text-ink-900 flex items-center justify-center text-sm font-bold">1</span><div><h2 className="text-lg font-bold text-ink-900 dark:text-white">Screenplay Details</h2><p className="text-sm text-ink-500 dark:text-ink-400">Enter the metadata readers will use to discover your work.</p></div></div>
             <div className="space-y-5">
+              <div><label htmlFor="title" className={labelClass}>Title <span className="text-coral-500">*</span></label><input id="title" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} className={fieldClass} placeholder="Enter your screenplay title" required /></div>
               <div className="grid sm:grid-cols-2 gap-5">
-                <div><label className={labelClass}>Secondary Genre</label><SelectField value={form.secondary_genre} onChange={(value) => setForm({ ...form, secondary_genre: value })} options={GENRE_OPTIONS} placeholder="Select secondary genre" /></div>
-                <div><label className={labelClass}>Primary Setting</label><SelectField value={form.primary_setting} onChange={(value) => setForm({ ...form, primary_setting: value })} options={SETTING_OPTIONS} placeholder="Select setting" /></div>
+                <div><label className={labelClass}>Format <span className="text-coral-500">*</span></label><SelectField value={form.format_type} onChange={(value) => setForm({ ...form, format_type: value })} options={FORMAT_OPTIONS} placeholder="Select format" /></div>
+                <div><label className={labelClass}>Genre <span className="text-coral-500">*</span></label><SelectField value={form.genre} onChange={(value) => setForm({ ...form, genre: value })} options={GENRE_OPTIONS} placeholder="Select genre" /></div>
               </div>
-              <div className="grid sm:grid-cols-2 gap-5">
-                <div><label className={labelClass}>Country</label><SearchableSelect value={form.country} onChange={(value) => setForm({ ...form, country: value })} options={COUNTRY_OPTIONS} placeholder="Select country" searchPlaceholder="Search countries..." /></div>
-              </div>
-              <div className="grid sm:grid-cols-2 gap-5">
-                <div><label className={labelClass}>Target Audience</label><SelectField value={form.target_audience} onChange={(value) => setForm({ ...form, target_audience: value })} options={TARGET_AUDIENCE_OPTIONS} placeholder="Select target audience" /></div>
-                <div><label className={labelClass}>Budget Range</label><SelectField value={form.budget_range} onChange={(value) => setForm({ ...form, budget_range: value })} options={BUDGET_RANGE_OPTIONS} placeholder="Select budget range" /></div>
-              </div>
-              <div><label className={labelClass}>Themes</label><MultiSelect options={THEME_OPTIONS} selected={form.themes} onChange={(themes) => setForm({ ...form, themes })} placeholder="Select themes" /></div>
-              <div><label className={labelClass}>Tags</label><TagInput tags={form.tags} onChange={(tags) => setForm({ ...form, tags })} /></div>
+              <div><div className="flex justify-between gap-3"><label htmlFor="logline" className={labelClass}>Logline <span className="text-coral-500">*</span></label><span className={`text-xs ${trimmedLoglineLength > 200 ? 'text-coral-600' : 'text-ink-400'}`}>{trimmedLoglineLength} / 200</span></div><input id="logline" value={form.logline} onChange={(event) => setForm({ ...form, logline: event.target.value })} className={fieldClass} placeholder="A one-sentence summary of your screenplay" aria-invalid={trimmedLoglineLength > 200} required /></div>
+              <div><div className="flex justify-between gap-3"><label htmlFor="synopsis" className={labelClass}>Short Synopsis <span className="text-coral-500">*</span></label><span className={`text-xs ${trimmedSynopsisLength > 1500 ? 'text-coral-600' : 'text-ink-400'}`}>{trimmedSynopsisLength} / 1,500</span></div><textarea id="synopsis" value={form.synopsis} onChange={(event) => setForm({ ...form, synopsis: event.target.value })} rows={7} className={`${fieldClass} resize-y`} placeholder="Briefly summarise the story, including the central conflict and outcome." aria-invalid={trimmedSynopsisLength > 1500 || (trimmedSynopsisLength > 0 && trimmedSynopsisLength < 250)} required /><p className="text-xs text-ink-400 mt-1.5">Briefly summarise the story, including the central conflict and outcome. Minimum 250 characters.</p></div>
+              <div><label className={labelClass}>Language <span className="text-coral-500">*</span></label><SearchableSelect value={form.language} onChange={(value) => setForm({ ...form, language: value })} options={LANGUAGE_OPTIONS} placeholder="Select language" searchPlaceholder="Search languages..." icon={Languages} /></div>
             </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-6"><span className="w-8 h-8 rounded-full bg-ink-100 dark:bg-ink-800 text-ink-700 dark:text-ink-300 flex items-center justify-center text-sm font-bold">2</span><div><h2 className="text-lg font-bold text-ink-900 dark:text-white">Visibility</h2><p className="text-sm text-ink-500 dark:text-ink-400">
-            Choose who can initially discover your screenplay.
-                    </p></div>
-        </div>
-
-        <div className="space-y-4">
-            <div className={`w-full flex items-start gap-3 p-4 rounded-xl border-2 transition-all text-left ${
-              form.visibility === 'private'
-                ? 'border-ink-300 dark:border-ink-600 bg-ink-50 dark:bg-ink-800'
-                : 'border-ink-100 dark:border-ink-800 hover:border-ink-200 dark:hover:border-ink-700'
-            }`} onClick={() => setForm({ ...form, visibility: 'private' })}>
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                form.visibility === 'private' ? 'bg-ink-200 dark:bg-ink-700' : 'bg-ink-100 dark:bg-ink-800'
-              }`}>
-                <Lock className="w-5 h-5 text-ink-500" />
+            <div className="border-t border-ink-100 dark:border-ink-800 mt-7 pt-7">
+              <h3 className="text-xs font-semibold text-ink-400 dark:text-ink-500 uppercase tracking-wider mb-5">Optional metadata</h3>
+              <div className="space-y-5">
+                <div className="grid sm:grid-cols-2 gap-5">
+                  <div><label className={labelClass}>Secondary Genre</label><SelectField value={form.secondary_genre} onChange={(value) => setForm({ ...form, secondary_genre: value })} options={GENRE_OPTIONS} placeholder="Select secondary genre" /></div>
+                  <div><label className={labelClass}>Primary Setting</label><SelectField value={form.primary_setting} onChange={(value) => setForm({ ...form, primary_setting: value })} options={SETTING_OPTIONS} placeholder="Select setting" /></div>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-5">
+                  <div><label className={labelClass}>Country</label><SearchableSelect value={form.country} onChange={(value) => setForm({ ...form, country: value })} options={COUNTRY_OPTIONS} placeholder="Select country" searchPlaceholder="Search countries..." /></div>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-5">
+                  <div><label className={labelClass}>Target Audience</label><SelectField value={form.target_audience} onChange={(value) => setForm({ ...form, target_audience: value })} options={TARGET_AUDIENCE_OPTIONS} placeholder="Select target audience" /></div>
+                  <div><label className={labelClass}>Budget Range</label><SelectField value={form.budget_range} onChange={(value) => setForm({ ...form, budget_range: value })} options={BUDGET_RANGE_OPTIONS} placeholder="Select budget range" /></div>
+                </div>
+                <div><label className={labelClass}>Themes</label><MultiSelect options={THEME_OPTIONS} selected={form.themes} onChange={(themes) => setForm({ ...form, themes })} placeholder="Select themes" /></div>
+                <div><label className={labelClass}>Tags</label><TagInput tags={form.tags} onChange={(tags) => setForm({ ...form, tags })} /></div>
               </div>
-              <div className="flex-1">
-                <div className="text-sm font-semibold text-ink-900 dark:text-white">Private</div>
-                <div className="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
-                  Only visible to you. Does not appear in searches or receive community reviews.
+            </div>
+            <div className="flex justify-end mt-4">
+              <Button onClick={proceedToUpload} disabled={!detailsValid} variant="default">
+                Proceed to Upload
+              </Button>
+            </div>
+          </Card>
+        )}
+        {phase === 'upload' && (
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-6"><span className="w-8 h-8 rounded-full bg-ink-100 dark:bg-ink-800 text-ink-700 dark:text-ink-300 flex items-center justify-center text-sm font-bold">2</span><div><h2 className="text-lg font-bold text-ink-900 dark:text-white">Upload Screenplay</h2><p className="text-sm text-ink-500 dark:text-ink-400">Upload your screenplay PDF file.</p></div></div>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-4 rounded-xl border-2 transition-all text-left">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-ink-100 dark:bg-ink-800">
+                  <Upload className="w-6 h-6 text-ink-500" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-ink-900 dark:text-white">Drag & drop or click to upload</div>
+                  <div className="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
+                    PDF files only, max 25MB
+                  </div>
                 </div>
               </div>
-              {form.visibility === 'private' && <Check className="w-5 h-5 text-accent-500 flex-shrink-0" />}
-            </div>
-            <div className={`w-full flex items-start gap-3 p-4 rounded-xl border-2 transition-all text-left ${
-              form.visibility === 'reader_community'
-                ? 'border-accent-300 dark:border-accent-700 bg-accent-50 dark:bg-accent-900/10'
-                : 'border-ink-100 dark:border-ink-800'
-            }`} onClick={() => setForm({ ...form, visibility: 'reader_community' })}>
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                form.visibility === 'reader_community' ? 'bg-accent-100 dark:bg-accent-900/30' : 'bg-ink-100 dark:bg-ink-800'
-              }`}>
-                <Eye className="w-5 h-5 text-accent-500" />
+              {fileError && <div role="alert" className="px-4 py-3 rounded-xl bg-coral-50 dark:bg-coral-900/20 border border-coral-200 dark:border-coral-800 text-coral-700 dark:text-coral-400 text-sm flex items-start gap-2"><AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" /><span>{fileError}</span></div>}
+              <div className="mt-4">
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length) selectFile(e.target.files[0]);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  className="w-full flex items-center justify-center px-4 py-2.5 rounded-xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 text-sm font-medium text-ink-700 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-800"
+                >
+                  {file ? (
+                    <>
+                      <FileText className="w-4 h-4 mr-2" />
+                      <span>{file.name}</span>
+                    </>
+                  ) : (
+                    <Upload className="w-4 h-4 mr-2" />
+                  )}
+                  Select PDF
+                </button>
               </div>
-              <div className="flex-1">
-                <div className="text-sm font-semibold text-ink-900 dark:text-white">Reader Community</div>
-                <div className="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
-                  Available to approved community readers. Appears in discovery and can receive reviews.
+              {file && (
+                <div className="mt-4 flex items-center gap-2 text-sm text-ink-500">
+                  <span>{file.name}</span>
+                  <span className="mx-2">|</span>
+                  <span>${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                </div>
+              )}
+              <div className="flex justify-end mt-4">
+                <Button onClick={proceedToVisibility} disabled={!file} variant="default">
+                  Proceed to Visibility
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+        {phase === 'visibility' && (
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-6"><span className="w-8 h-8 rounded-full bg-ink-100 dark:bg-ink-800 text-ink-700 dark:text-ink-300 flex items-center justify-center text-sm font-bold">3</span><div><h2 className="text-lg font-bold text-ink-900 dark:text-white">Visibility</h2><p className="text-sm text-ink-500 dark:text-ink-400">Choose who can initially discover your screenplay.</p></div></div>
+            <div className="space-y-4">
+                <div className={`w-full flex items-start gap-3 p-4 rounded-xl border-2 transition-all text-left ${
+                  form.visibility === 'private'
+                    ? 'border-ink-300 dark:border-ink-600 bg-ink-50 dark:bg-ink-800'
+                    : 'border-ink-100 dark:border-ink-800 hover:border-ink-200 dark:hover:border-ink-700'
+                }`} onClick={() => setForm({ ...form, visibility: 'private' })} >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    form.visibility === 'private' ? 'bg-ink-200 dark:bg-ink-700' : 'bg-ink-100 dark:bg-ink-800'
+                  }`}>
+                    <Lock className="w-5 h-5 text-ink-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-ink-900 dark:text-white">Private</div>
+                    <div className="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
+                      Only visible to you. Does not appear in searches or receive community reviews.
+                    </div>
+                  </div>
+                  {form.visibility === 'private' && <Check className="w-5 h-5 text-accent-500 flex-shrink-0" />}
+                </div>
+                <div className={`w-full flex items-start gap-3 p-4 rounded-xl border-2 transition-all text-left ${
+                  form.visibility === 'reader_community'
+                    ? 'border-accent-300 dark:border-accent-700 bg-accent-50 dark:bg-accent-900/10'
+                    : 'border-ink-100 dark:border-ink-800'
+                }`} onClick={() => setForm({ ...form, visibility: 'reader_community' })} >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    form.visibility === 'reader_community' ? 'bg-accent-100 dark:bg-accent-900/30' : 'bg-ink-100 dark:bg-ink-800'
+                  }`}>
+                    <Eye className="w-5 h-5 text-accent-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-ink-900 dark:text-white">Reader Community</div>
+                    <div className="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
+                      Available to approved community readers. Appears in discovery and can receive reviews.
+                    </div>
+                  </div>
+                  {form.visibility === 'reader_community' && <Check className="w-5 h-5 text-accent-500 flex-shrink-0" />}
                 </div>
               </div>
-              {form.visibility === 'reader_community' && <Check className="w-5 h-5 text-accent-500 flex-shrink-0" />}
             </div>
-          </div>
-        </Card>
-
-        <Card className="p-6"><h2 className="text-lg font-bold text-ink-900 dark:text-white mb-2">Submission Confirmation</h2><p className="text-sm text-ink-500 dark:text-ink-400">By submitting your screenplay, you agree to Scrinit's Content Policy.</p></Card>
-
-        {submissionError && <div role="alert" className="px-4 py-3 rounded-xl bg-coral-50 dark:bg-coral-900/20 border border-coral-200 dark:border-coral-800 text-coral-700 dark:text-coral-400 text-sm flex items-start gap-2"><AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" /><span>{submissionError}</span></div>}
-        <Button type="submit" size="lg" className="w-full" disabled={!requiredValid || !file || phase === 'validating'}>{phase === 'validating' && <Loader2 className="w-4 h-4 animate-spin" />}{phase === 'validating' ? 'Validating screenplay...' : 'Submit Screenplay'}</Button>
+            <div className="flex justify-end mt-4">
+              <Button type="submit" size="lg" className="w-full" disabled={!file || !detailsValid}>
+                {phase === 'submitting' && <Loader2 className="w-4 h-4 animate-spin" />}
+                {phase === 'submitting' ? 'Submitting...' : 'Submit Screenplay'}
+              </Button>
+            </div>
+            {submissionError && <div role="alert" className="px-4 py-3 rounded-xl bg-coral-50 dark:bg-coral-900/20 border border-coral-200 dark:border-coral-800 text-coral-700 dark:text-coral-400 text-sm flex items-start gap-2 mt-4"><AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" /><span>{submissionError}</span></div>}
+          </Card>
+        )}
       </div>
     </form>
   );
